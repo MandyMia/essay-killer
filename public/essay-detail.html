@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>作文详情 - 小学生作文智能批改背诵平台</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background: #f8f9fa;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .navbar {
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .main-container {
+      margin-top: 20px;
+    }
+    .essay-card {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .correction-section {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .original-text {
+      background: #fff3cd;
+      padding: 15px;
+      border-radius: 10px;
+      border-left: 4px solid #ffc107;
+    }
+    .corrected-text {
+      background: #d1ecf1;
+      padding: 15px;
+      border-radius: 10px;
+      border-left: 4px solid #17a2b8;
+    }
+    .high-score-text {
+      background: #d4edda;
+      padding: 15px;
+      border-radius: 10px;
+      border-left: 4px solid #28a745;
+    }
+    .action-btn {
+      margin: 5px;
+      border-radius: 8px;
+    }
+    .ocr-image {
+      max-width: 100%;
+      border-radius: 10px;
+      margin: 10px 0;
+    }
+    .grade-indicator {
+      display: inline-block;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .grade-primary {
+      background: #e7f3ff;
+      color: #0066cc;
+    }
+    .grade-secondary {
+      background: #fff0e6;
+      color: #ff6600;
+    }
+    .grade-high {
+      background: #e6f7ee;
+      color: #00aa44;
+    }
+  </style>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+      <a class="navbar-brand" href="#">
+        <i class="bi bi-mortarboard-fill text-primary me-2"></i>
+        <strong>小学生作文批改平台</strong>
+      </a>
+      <div class="d-flex align-items-center">
+        <button class="btn btn-outline-primary btn-sm" onclick="goBack()">
+          <i class="bi bi-arrow-left me-1"></i> 返回
+        </button>
+        <button class="btn btn-outline-primary btn-sm ms-2" onclick="logout()">
+          <i class="bi bi-box-arrow-right"></i> 退出
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container main-container">
+    <!-- 标题和状态 -->
+    <div class="essay-card">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">春天来了</h2>
+        <span class="grade-indicator grade-primary">三年级 - 1班</span>
+      </div>
+      <div class="d-flex justify-content-between align-items-center text-muted">
+        <small>
+          <i class="bi bi-clock"></i> 2024-04-28 14:30
+          <span class="ms-3">
+            <i class="bi bi-check-circle"></i> 已完成AI批改
+          </span>
+        </small>
+        <span class="badge bg-success">已完成</span>
+      </div>
+    </div>
+
+    <!-- OCR识别的原文 -->
+    <div class="essay-card" id="ocr-section">
+      <h4 class="mb-3">
+        <i class="bi bi-image me-2 text-warning"></i>OCR识别原文
+      </h4>
+      <img src="https://picsum.photos/seed/handwriting/600/400.jpg" alt="手写作文" class="ocr-image">
+      <div class="original-text mt-3">
+        <h5>原文内容：</h5>
+        <p class="mb-0">春天来了，花儿开了。小鸟在树上唱歌。这是一个美丽的早晨。我们全家一起去公园野餐，玩得很开心。阳光照在草地上，绿油油的。爸爸放风筝，妈妈拍照，我追蝴蝶。真是个快乐的一天！</p>
+      </div>
+    </div>
+
+    <!-- AI批改结果 -->
+    <div class="essay-card">
+      <h4 class="mb-3">
+        <i class="bi bi-magic me-2 text-primary"></i>AI智能批改
+      </h4>
+
+      <div class="row">
+        <div class="col-md-12">
+          <div class="correction-section">
+            <h5 class="mb-3">
+              <i class="bi bi-chat-quote me-2 text-info"></i>批改评语
+            </h5>
+            <div class="alert alert-info">
+              <h6 class="alert-heading">整体评价</h6>
+              <p class="mb-2">这是一篇优秀的写景作文！语言生动活泼，能够清楚地表达春天的美丽景色和快乐的心情。</p>
+              <p class="mb-0">得分：<strong>85分</strong></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="correction-section mt-3">
+        <h5 class="mb-3">
+          <i class="bi bi-exclamation-triangle me-2 text-warning"></i>问题详解
+        </h5>
+        <div class="accordion" id="problemAccordion">
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#problem1">
+                原句：小鸟在树上唱歌
+              </button>
+            </h2>
+            <div id="problem1" class="accordion-collapse collapse show" data-bs-parent="#problemAccordion">
+              <div class="accordion-body">
+                <strong>修改建议：</strong>小鸟在树上欢快地歌唱<br>
+                <strong>修改原因：</strong>加入"欢快地"使描写更生动，体现小鸟的快乐心情。
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#problem2">
+                原句：阳光照在草地上，绿油油的
+              </button>
+            </h2>
+            <div id="problem2" class="accordion-collapse collapse" data-bs-parent="#problemAccordion">
+              <div class="accordion-body">
+                <strong>修改建议：</strong>金色的阳光洒在绿油油的草地上<br>
+                <strong>修改原因：</strong>加入"金色的"增加了色彩描写，使画面更美丽。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="correction-section mt-3">
+        <h5 class="mb-3">
+          <i class="bi bi-lightbulb me-2 text-success"></i>修改建议
+        </h5>
+        <ul>
+          <li>可以加入更多关于春天的景物描写，如：小草发芽、花儿盛开等</li>
+          <li>使用一些成语，如：生机勃勃、鸟语花香</li>
+          <li>结尾可以表达对春天的喜爱之情</li>
+          <li>注意段落结构，将同类内容放在一起</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 高分范文 -->
+    <div class="essay-card">
+      <h4 class="mb-3">
+        <i class="bi bi-star me-2 text-success"></i>考场高分范文
+      </h4>
+      <div class="high-score-text">
+        <h5>范文内容：</h5>
+        <p class="mb-0">
+          春天来了，万物复苏。柳树吐出了嫩绿的新芽，桃花笑红了脸蛋。小鸟在枝头欢快地歌唱，仿佛在迎接春天的到来。
+          <br><br>
+          这是一个美丽的早晨，金色的阳光洒在绿油油的草地上。我们全家一起去公园野餐。爸爸举着五彩斑斓的风筝，在蓝天下奔跑；妈妈举起相机，记录下这美好的一刻；我则在花丛中追蝴蝶，听它们"嗡嗡"地唱歌。
+          <br><br>
+          春天是希望的季节，也是快乐的季节。我爱这美丽的春天！
+        </p>
+      </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="text-center mb-5">
+      <button class="btn btn-primary action-btn" onclick="start背诵()">
+        <i class="bi bi-book me-2"></i>开始背诵
+      </button>
+      <button class="btn btn-success action-btn" onclick="exportWord()">
+        <i class="bi bi-file-word me-2"></i>导出Word
+      </button>
+      <button class="btn btn-outline-success action-btn" onclick="addToFavorites()">
+        <i class="bi bi-star me-2"></i>收藏范文
+      </button>
+      <button class="btn btn-outline-primary action-btn" onclick="goBack()">
+        <i class="bi bi-arrow-left me-2"></i>返回列表
+      </button>
+    </div>
+  </div>
+
+  <!-- 背诵模式模态框 -->
+  <div class="modal fade" id="readingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-book me-2"></i>背诵模式
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="readingContent" style="font-size: 18px; line-height: 2.0;">
+            <p>春天来了，万物复苏。柳树吐出了嫩绿的新芽，桃花笑红了脸蛋。小鸟在枝头欢快地歌唱，仿佛在迎接春天的到来。</p>
+            <p>这是一个美丽的早晨，金色的阳光洒在绿油油的草地上。我们全家一起去公园野餐。爸爸举着五彩斑斓的风筝，在蓝天下奔跑；妈妈举起相机，记录下这美好的一刻；我则在花丛中追蝴蝶，听它们"嗡嗡"地唱歌。</p>
+            <p>春天是希望的季节，也是快乐的季节。我爱这美丽的春天！</p>
+          </div>
+          <div class="mt-3">
+            <label class="form-label">字体大小：</label>
+            <input type="range" class="form-range" min="16" max="24" value="18" onchange="adjustFontSize(this.value)">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">
+            <i class="bi bi-printer"></i> 一键打印
+          </button>
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+            关闭
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/wordExport.js"></script>
+  <script src="js/auth-utils.js"></script>
+  <script>
+    // 从URL获取作文ID
+    function getEssayId() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('id');
+    }
+
+    // 返回上一页
+    function goBack() {
+      // 根据用户角色跳转到不同页面
+      if (authUtils.checkRole('parent')) {
+        window.location.href = 'feature-center.html';
+      } else {
+        window.location.href = 'teacher-dashboard.html';
+      }
+    }
+
+    // 登出
+    function logout() {
+      if (confirm('确定要退出登录吗？')) {
+        // 清除后端 session
+        fetch('http://localhost:3003/api/auth/logout', { method: 'POST' })
+          .then(() => {
+            // 清除前端存储
+            authUtils.clearAuth();
+            window.location.href = 'index.html';
+          })
+          .catch(err => {
+            console.error('退出登录失败:', err);
+            // 即使后端失败也清除前端数据
+            authUtils.clearAuth();
+            window.location.href = 'index.html';
+          });
+      }
+    }
+
+    // 开始背诵
+    function start背诵() {
+      const modal = new bootstrap.Modal(document.getElementById('readingModal'));
+      modal.show();
+    }
+
+    // 导出Word
+    function exportWord() {
+      // 显示加载提示
+      const originalText = event.target.innerHTML;
+      event.target.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>生成中...';
+      event.target.disabled = true;
+
+      // 模拟生成过程
+      setTimeout(() => {
+        try {
+          window.wordExporter.exportEssayDetail();
+          alert('Word文档已生成并下载到本地！');
+        } catch (error) {
+          alert('导出失败，请重试');
+        } finally {
+          event.target.innerHTML = originalText;
+          event.target.disabled = false;
+        }
+      }, 1500);
+    }
+
+    // 添加到收藏
+    function addToFavorites() {
+      alert('已添加到收藏！');
+    }
+
+    // 调整字体大小
+    function adjustFontSize(size) {
+      document.getElementById('readingContent').style.fontSize = size + 'px';
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      // 检查登录状态
+      if (!authUtils.checkAuth()) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      const essayId = getEssayId();
+      if (!essayId) {
+        // 根据用户角色跳转到不同页面
+        if (authUtils.checkRole('parent')) {
+          window.location.href = 'parent-dashboard.html';
+        } else {
+          window.location.href = 'teacher-dashboard.html';
+        }
+      }
+    });
+  </script>
+</body>
+</html>

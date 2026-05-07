@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小学生作文智能批改背诵平台</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+    .main-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .login-container {
+      background: white;
+      border-radius: 20px;
+      padding: 60px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      text-align: center;
+      max-width: 500px;
+      width: 100%;
+    }
+    .platform-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 30px;
+    }
+    .platform-subtitle {
+      color: #666;
+      margin-bottom: 50px;
+      font-size: 1.2rem;
+    }
+    .login-options {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .login-btn {
+      padding: 20px;
+      border-radius: 15px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+    .login-btn.parent {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+    .login-btn.teacher {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .login-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+      color: white;
+      text-decoration: none;
+    }
+    .login-btn i {
+      font-size: 2rem;
+    }
+    .register-link {
+      margin-top: 30px;
+      color: white;
+    }
+    .register-link a {
+      color: #ffd700;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .register-link a:hover {
+      text-decoration: underline;
+    }
+    .footer {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      padding: 20px 0;
+      text-align: center;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <div class="login-container">
+      <h1 class="platform-title">小学生作文智能批改背诵平台</h1>
+      <p class="platform-subtitle">AI赋能教育，助力孩子写作成长</p>
+
+      <div class="login-options">
+        <a href="parent-login.html" class="login-btn parent">
+          <i class="bi bi-person-fill"></i>
+          <div>
+            <div>家长登录</div>
+            <small>上传作文 · 查看批改 · 背诵范文</small>
+          </div>
+        </a>
+
+        <a href="teacher-login.html" class="login-btn teacher">
+          <i class="bi bi-person-badge-fill"></i>
+          <div>
+            <div>教师登录</div>
+            <small>管理班级 · 批改作业 · 成绩分析</small>
+          </div>
+        </a>
+      </div>
+
+      <div class="register-link">
+        <p>还没有账号？ <a href="register.html">立即注册</a></p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <p class="mb-0">© 2024 小学生作文智能批改背诵平台 - 让每个孩子爱上写作</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

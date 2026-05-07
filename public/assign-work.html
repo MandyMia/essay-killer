@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>布置作业 - 小学生作文智能批改背诵平台</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background: #f8f9fa;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .navbar {
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .main-container {
+      margin-top: 20px;
+    }
+    .assignment-card {
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .form-label {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    .form-control, .form-select {
+      border-radius: 10px;
+      border: 2px solid #e0e0e0;
+      padding: 12px 15px;
+      font-size: 16px;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 10px;
+      padding: 12px 30px;
+      font-weight: 600;
+      font-size: 16px;
+    }
+    .btn-outline-primary {
+      border-radius: 10px;
+      padding: 12px 30px;
+      font-weight: 600;
+      font-size: 16px;
+    }
+    .class-selector {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .class-card {
+      background: #f8f9fa;
+      border: 2px solid #e0e0e0;
+      border-radius: 15px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .class-card:hover {
+      border-color: #667eea;
+      transform: translateY(-5px);
+    }
+    .class-card.selected {
+      background: #e7f3ff;
+      border-color: #667eea;
+    }
+    .class-card i {
+      font-size: 2.5rem;
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+    .requirements-section {
+      background: #f8f9fa;
+      border-radius: 15px;
+      padding: 25px;
+      margin: 20px 0;
+    }
+    .requirement-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 15px;
+      background: white;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+    }
+    .requirement-item:hover {
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .requirement-item input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      margin-right: 15px;
+    }
+    .requirement-item i {
+      font-size: 1.5rem;
+      color: #667eea;
+      margin-right: 15px;
+    }
+    .deadline-section {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 15px;
+      padding: 25px;
+      margin: 20px 0;
+    }
+    .template-section {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      margin: 20px 0;
+      border: 2px solid #e0e0e0;
+    }
+    .template-card {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .template-card:hover {
+      border-color: #667eea;
+      transform: translateY(-2px);
+    }
+    .template-card.selected {
+      background: #e7f3ff;
+      border: 2px solid #667eea;
+    }
+    .assignment-preview {
+      background: #f8f9fa;
+      border-radius: 15px;
+      padding: 25px;
+      margin-top: 30px;
+      display: none;
+    }
+    .assignment-preview.show {
+      display: block;
+    }
+    .preview-header {
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+    }
+    .preview-content {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .action-buttons {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      display: flex;
+      gap: 15px;
+    }
+    .action-btn {
+      padding: 15px 25px;
+      border-radius: 50px;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+    }
+    .action-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+    /* 悬浮草稿箱按钮 */
+    .draft-fab {
+      position: fixed;
+      bottom: 100px;
+      right: 30px;
+      z-index: 1050;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 12px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .draft-fab:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 6px 20px rgba(102,126,234,0.5);
+    }
+    .draft-fab .badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: #ff4d4f;
+      color: white;
+      border-radius: 50%;
+      min-width: 20px;
+      height: 20px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* 抽屉遮罩 */
+    .drawer-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.3);
+      z-index: 1051;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .drawer-overlay.open { opacity: 1; visibility: visible; }
+    /* 抽屉面板 */
+    .drawer-panel {
+      position: fixed;
+      top: 0; right: -400px;
+      width: 400px; height: 100vh;
+      background: white;
+      z-index: 1052;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+      transition: right 0.3s ease;
+      display: flex; flex-direction: column;
+    }
+    .drawer-panel.open { right: 0; }
+    .drawer-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .drawer-body { flex: 1; overflow-y: auto; padding: 16px 24px; }
+    .drawer-empty { text-align: center; padding: 60px 20px; color: #999; }
+    .draft-item { padding: 16px 0; border-bottom: 1px solid #f0f0f0; }
+    .draft-item:last-child { border-bottom: none; }
+    .draft-title { font-weight: 600; font-size: 15px; color: #333; margin-bottom: 4px; }
+    .draft-meta { font-size: 13px; color: #999; margin-bottom: 10px; }
+    .draft-actions { display: flex; gap: 8px; }
+  </style>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+      <a class="navbar-brand" href="#">
+        <i class="bi bi-mortarboard-fill text-primary me-2"></i>
+        <strong>小学生作文批改平台</strong>
+      </a>
+      <div class="d-flex align-items-center">
+        <span class="me-3">
+          <i class="bi bi-person-circle text-primary"></i>
+          <span id="teacherName">李老师</span>
+        </span>
+        <button class="btn btn-outline-primary btn-sm" onclick="goBack()">
+          <i class="bi bi-arrow-left me-1"></i> 返回
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container main-container">
+    <div class="assignment-card">
+      <h2 class="mb-4">
+        <i class="bi bi-plus-circle me-2 text-primary"></i>布置新作业
+      </h2>
+
+      <!-- 基本信息 -->
+      <div class="mb-4">
+        <h4 class="mb-3">基本信息</h4>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">作业标题 *</label>
+              <input type="text" class="form-control" id="assignmentTitle" placeholder="例如：春天来了">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">作业类型 *</label>
+              <select class="form-select" id="assignmentType">
+                <option value="">请选择</option>
+                <option value="writing">命题作文</option>
+                <option value="free">自由写作</option>
+                <option value="reading">读后感</option>
+                <option value="observation">观察日记</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 选择班级 -->
+      <div class="mb-4">
+        <h4 class="mb-3">选择班级 *</h4>
+        <div class="class-selector">
+          <div class="class-card" onclick="selectClass(this, '3-1')">
+            <i class="bi bi-people-fill"></i>
+            <h5>三年级1班</h5>
+            <p class="text-muted mb-0">45名学生</p>
+          </div>
+          <div class="class-card" onclick="selectClass(this, '3-2')">
+            <i class="bi bi-people-fill"></i>
+            <h5>三年级2班</h5>
+            <p class="text-muted mb-0">38名学生</p>
+          </div>
+          <div class="class-card" onclick="selectClass(this, '3-3')">
+            <i class="bi bi-people-fill"></i>
+            <h5>三年级3班</h5>
+            <p class="text-muted mb-0">37名学生</p>
+          </div>
+        </div>
+        <input type="hidden" id="selectedClasses" value="">
+      </div>
+
+      <!-- 作文要求 -->
+      <div class="requirements-section">
+        <h4 class="mb-3">
+          <i class="bi bi-list-check me-2 text-primary"></i>作文要求
+        </h4>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="requirement-item">
+              <i class="bi bi-pencil-square"></i>
+              <div>
+                <h6 class="mb-1">字数要求</h6>
+                <div class="d-flex align-items-center gap-2 mt-1">
+                  <input type="number" id="minWords" class="form-control form-control-sm" style="width:80px" placeholder="最少" min="0">
+                  <span class="text-muted small">—</span>
+                  <input type="number" id="maxWords" class="form-control form-control-sm" style="width:80px" placeholder="最多" min="0">
+                  <span class="text-muted small">字</span>
+                </div>
+              </div>
+            </div>
+            <div class="requirement-item">
+              <input type="checkbox" id="req2">
+              <i class="bi bi-image"></i>
+              <div>
+                <h6 class="mb-1">需要手写作文</h6>
+                <p class="text-muted mb-0 small">学生需要手写后拍照上传</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="requirement-item">
+              <input type="checkbox" id="req3">
+              <i class="bi bi-star"></i>
+              <div>
+                <h6 class="mb-1">需要背诵</h6>
+                <p class="text-muted mb-0 small">完成后需要背诵范文</p>
+              </div>
+            </div>
+            <div class="requirement-item">
+              <input type="checkbox" id="req4">
+              <i class="bi bi-bookmark"></i>
+              <div>
+                <h6 class="mb-1">提交范文</h6>
+                <p class="text-muted mb-0 small">收集优秀作文作为范文</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 详细要求 -->
+      <div class="mb-4">
+        <h4 class="mb-3">详细要求</h4>
+        <div class="mb-3">
+          <label class="form-label">写作要点</label>
+          <textarea class="form-control" rows="4" id="writingPoints" placeholder="请输入写作要求，如：1. 描写春天的景色 2. 表达对春天的喜爱之情 3. 使用比喻手法等..."></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">参考范文</label>
+          <textarea class="form-control" rows="3" id="referenceText" placeholder="可以提供一段参考文字（可选）"></textarea>
+        </div>
+      </div>
+
+      <!-- 截止时间 -->
+      <div class="deadline-section">
+        <h4 class="mb-3">
+          <i class="bi bi-clock me-2"></i>截止时间
+        </h4>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">提交截止日期</label>
+              <input type="date" class="form-control form-control-white" id="deadlineDate">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">提交截止时间</label>
+              <input type="time" class="form-control form-control-white" id="deadlineTime" value="18:00">
+            </div>
+          </div>
+        </div>
+        <p class="mb-0">
+          <i class="bi bi-info-circle me-2"></i>
+          学生将在截止时间后无法提交作业
+        </p>
+      </div>
+
+      <!-- 作业模板 -->
+      <div class="template-section">
+        <h4 class="mb-3">
+          <i class="bi bi-file-earmark-text me-2 text-primary"></i>使用模板
+        </h4>
+        <div class="template-card" onclick="selectTemplate(this, 'spring')">
+          <h6 class="mb-1">春天主题</h6>
+          <p class="text-muted mb-0 small">适合三年级作文，包含景物描写和情感表达</p>
+        </div>
+        <div class="template-card" onclick="selectTemplate(this, 'family')">
+          <h6 class="mb-1">我的家庭</h6>
+          <p class="text-muted mb-0 small">以家人为主题的记叙文写作</p>
+        </div>
+        <div class="template-card" onclick="selectTemplate(this, 'season')">
+          <h6 class="mb-1">季节变化</h6>
+          <p class="text-muted mb-0 small">观察四季变化的写作练习</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 作业预览 -->
+    <div class="assignment-preview" id="previewSection">
+      <h4 class="mb-3">
+        <i class="bi bi-eye me-2 text-primary"></i>作业预览
+      </h4>
+      <div class="preview-header">
+        <h3 id="previewTitle">作业标题</h3>
+        <p class="text-muted mb-0">布置时间：2024-04-28</p>
+      </div>
+      <div class="preview-content">
+        <h5>写作要求：</h5>
+        <p id="previewRequirements">写作要求内容</p>
+        <h5 class="mt-3">提交方式：</h5>
+        <p id="previewSubmission">提交方式说明</p>
+        <h5 class="mt-3">截止时间：</h5>
+        <p id="previewDeadline">截止时间说明</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 浮动操作按钮 -->
+  <div class="action-buttons">
+    <button class="btn btn-outline-primary action-btn" onclick="saveDraft()">
+      <i class="bi bi-save me-2"></i>保存草稿
+    </button>
+    <button class="btn btn-primary action-btn" onclick="publishAssignment()">
+      <i class="bi bi-send me-2"></i>发布作业
+    </button>
+  </div>
+
+  <!-- 草稿箱悬浮按钮 -->
+  <button class="draft-fab" id="draftFab" onclick="toggleDrawer()">
+    <i class="bi bi-file-earmark-text"></i>
+    <span>草稿箱</span>
+    <span class="badge" id="draftBadge" style="display:none">0</span>
+  </button>
+
+  <!-- 抽屉遮罩 -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()"></div>
+
+  <!-- 抽屉面板 -->
+  <div class="drawer-panel" id="drawerPanel">
+    <div class="drawer-header">
+      <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>我的草稿箱</h5>
+      <button type="button" class="btn-close" onclick="toggleDrawer()"></button>
+    </div>
+    <div class="drawer-body" id="drawerBody"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/auth-utils.js"></script>
+  <script>
+    // 返回上一页
+    function goBack() {
+      window.location.href = 'teacher-dashboard.html#classes';
+    }
+
+    // 选择班级
+    function selectClass(element, classId) {
+      element.classList.toggle('selected');
+
+      // 更新隐藏的输入字段
+      const selectedInput = document.getElementById('selectedClasses');
+      const selectedClasses = Array.from(document.querySelectorAll('.class-card.selected'))
+        .map(card => card.querySelector('h5').textContent);
+
+      selectedInput.value = selectedClasses.join(',');
+
+      // 更新预览
+      updatePreview();
+    }
+
+    // 选择模板
+    function selectTemplate(element, templateId) {
+      document.querySelectorAll('.template-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      element.classList.add('selected');
+
+      // 根据模板填充内容
+      const templates = {
+        spring: {
+          title: '春天来了',
+          type: '命题作文',
+          points: '1. 描写春天的景色，如花儿、小鸟、阳光等\n2. 表达对春天的喜爱之情\n3. 使用至少两个比喻句\n4. 写出春天给人们带来的快乐'
+        },
+        family: {
+          title: '我的家庭',
+          type: '命题作文',
+          points: '1. 介绍你的家庭成员\n2. 写一件和家人一起发生的难忘的事\n3. 表达对家人的爱\n4. 注意描写人物的动作和语言'
+        },
+        season: {
+          title: '季节的变化',
+          type: '观察日记',
+          points: '1. 选择一个季节进行观察\n2. 描写该季节的景色特点\n3. 写出人们在季节中的活动\n4. 表达你对这个季节的感受'
+        }
+      };
+
+      const template = templates[templateId];
+      if (template) {
+        document.getElementById('assignmentTitle').value = template.title;
+        document.getElementById('assignmentType').value = 'writing';
+        document.getElementById('writingPoints').value = template.points;
+        updatePreview();
+      }
+    }
+
+    // 更新预览
+    function updatePreview() {
+      const title = document.getElementById('assignmentTitle').value;
+      const selectedClasses = document.getElementById('selectedClasses').value;
+      const writingPoints = document.getElementById('writingPoints').value;
+      const deadlineDate = document.getElementById('deadlineDate').value;
+      const deadlineTime = document.getElementById('deadlineTime').value;
+
+      if (title && selectedClasses && writingPoints && deadlineDate) {
+        document.getElementById('previewSection').classList.add('show');
+        document.getElementById('previewTitle').textContent = title;
+        document.getElementById('previewRequirements').textContent = writingPoints;
+        document.getElementById('previewDeadline').textContent = `${deadlineDate} ${deadlineTime}`;
+
+        const submissionText = selectedClasses.includes('全部') ?
+          '所有学生需要提交作文' :
+          `以下班级需要提交：${selectedClasses}`;
+        document.getElementById('previewSubmission').textContent = submissionText;
+      } else {
+        document.getElementById('previewSection').classList.remove('show');
+      }
+    }
+
+    // 监听输入变化
+    document.getElementById('assignmentTitle').addEventListener('input', updatePreview);
+    document.getElementById('writingPoints').addEventListener('input', updatePreview);
+    document.getElementById('deadlineDate').addEventListener('change', updatePreview);
+
+    // 日期格式化
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    // 切换抽屉
+    function toggleDrawer() {
+      const panel = document.getElementById('drawerPanel');
+      const overlay = document.getElementById('drawerOverlay');
+      const isOpen = panel.classList.contains('open');
+      if (isOpen) {
+        panel.classList.remove('open');
+        overlay.classList.remove('open');
+      } else {
+        renderDraftsList();
+        panel.classList.add('open');
+        overlay.classList.add('open');
+      }
+    }
+
+    // 渲染草稿列表
+    function renderDraftsList() {
+      const drafts = JSON.parse(localStorage.getItem('assignmentDrafts') || '[]');
+      const body = document.getElementById('drawerBody');
+      if (drafts.length === 0) {
+        body.innerHTML = `
+          <div class="drawer-empty">
+            <i class="bi bi-file-earmark" style="font-size:3rem;opacity:0.3"></i>
+            <p class="mt-3">暂无草稿</p>
+          </div>`;
+        return;
+      }
+      body.innerHTML = drafts.map(d => `
+        <div class="draft-item">
+          <div class="draft-title">${d.title || '无标题'}</div>
+          <div class="draft-meta">${d.classes || '未选班级'} · ${d.savedAt || ''}</div>
+          <div class="draft-actions">
+            <button class="btn btn-sm btn-outline-primary" onclick="applyDraft(${d.id})">
+              <i class="bi bi-check2 me-1"></i>应用
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteDraft(${d.id})">
+              <i class="bi bi-trash me-1"></i>删除
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 应用草稿到表单
+    function applyDraft(draftId) {
+      const drafts = JSON.parse(localStorage.getItem('assignmentDrafts') || '[]');
+      const draft = drafts.find(d => d.id === draftId);
+      if (!draft) return;
+
+      document.getElementById('assignmentTitle').value = draft.title || '';
+      document.getElementById('assignmentType').value = draft.type || '';
+      document.getElementById('writingPoints').value = draft.points || '';
+      document.getElementById('minWords').value = draft.minWords || '';
+      document.getElementById('maxWords').value = draft.maxWords || '';
+      document.getElementById('referenceText').value = draft.referenceText || '';
+      document.getElementById('req2').checked = !!draft.req2;
+      document.getElementById('req3').checked = !!draft.req3;
+      document.getElementById('req4').checked = !!draft.req4;
+
+      // 恢复班级选择
+      document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
+      if (draft.classes) {
+        document.getElementById('selectedClasses').value = draft.classes;
+        document.querySelectorAll('.class-card').forEach(card => {
+          if (card.querySelector('h5')?.textContent === draft.classes) {
+            card.classList.add('selected');
+          }
+        });
+      }
+
+      // 恢复截止时间
+      if (draft.deadline) {
+        const [date, time] = draft.deadline.split(' ');
+        document.getElementById('deadlineDate').value = date;
+        document.getElementById('deadlineTime').value = time || '18:00';
+      }
+
+      window.currentDraftId = draftId;
+      updatePreview();
+      toggleDrawer();
+      alert('草稿已加载');
+    }
+
+    // 删除草稿
+    function deleteDraft(draftId) {
+      const drafts = JSON.parse(localStorage.getItem('assignmentDrafts') || '[]');
+      const draft = drafts.find(d => d.id === draftId);
+      if (!confirm(`确定删除草稿《${draft?.title || '无标题'}》吗？`)) return;
+      const updated = drafts.filter(d => d.id !== draftId);
+      localStorage.setItem('assignmentDrafts', JSON.stringify(updated));
+      renderDraftsList();
+      updateDraftBadge();
+    }
+
+    // 更新角标数量
+    function updateDraftBadge() {
+      const drafts = JSON.parse(localStorage.getItem('assignmentDrafts') || '[]');
+      const badge = document.getElementById('draftBadge');
+      if (drafts.length > 0) {
+        badge.textContent = drafts.length;
+        badge.style.display = '';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    // 保存草稿
+    function saveDraft() {
+      const assignment = {
+        id: window.currentDraftId || Date.now(),
+        title: document.getElementById('assignmentTitle').value,
+        type: document.getElementById('assignmentType').value,
+        classes: document.getElementById('selectedClasses').value,
+        points: document.getElementById('writingPoints').value,
+        minWords: document.getElementById('minWords').value,
+        maxWords: document.getElementById('maxWords').value,
+        referenceText: document.getElementById('referenceText').value,
+        req2: document.getElementById('req2').checked,
+        req3: document.getElementById('req3').checked,
+        req4: document.getElementById('req4').checked,
+        deadline: `${document.getElementById('deadlineDate').value} ${document.getElementById('deadlineTime').value}`,
+        savedAt: new Date().toLocaleString('zh-CN')
+      };
+
+      if (!assignment.title) {
+        alert('请至少填写作业标题再保存草稿');
+        return;
+      }
+
+      let drafts = JSON.parse(localStorage.getItem('assignmentDrafts') || '[]');
+      const idx = drafts.findIndex(d => d.id === assignment.id);
+      if (idx !== -1) {
+        drafts[idx] = assignment;
+      } else {
+        drafts.unshift(assignment);
+      }
+      localStorage.setItem('assignmentDrafts', JSON.stringify(drafts));
+      window.currentDraftId = assignment.id;
+      updateDraftBadge();
+      alert('草稿已保存！');
+    }
+
+    // 发布作业
+    async function publishAssignment() {
+      const title = document.getElementById('assignmentTitle').value;
+      const selectedClasses = document.getElementById('selectedClasses').value;
+      const writingPoints = document.getElementById('writingPoints').value;
+      const deadlineDate = document.getElementById('deadlineDate').value;
+      const deadlineTime = document.getElementById('deadlineTime').value;
+
+      if (!title || !selectedClasses || !writingPoints || !deadlineDate) {
+        alert('请填写完整信息！');
+        return;
+      }
+
+      if (!confirm('确定要发布作业吗？')) return;
+
+      const btn = document.querySelector('.btn-primary.action-btn');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>发布中...';
+
+      try {
+        const minWords = document.getElementById('minWords').value;
+        const maxWords = document.getElementById('maxWords').value;
+        const wordCountReq = (minWords || maxWords)
+          ? `${minWords || 0}-${maxWords || '∞'}字`
+          : '';
+        const description = writingPoints + (wordCountReq ? '\n字数要求：' + wordCountReq : '');
+        const grade = selectedClasses.replace(/班.*$/, '').trim() || '三年级';
+        const class_name = selectedClasses || '1班';
+
+        const isEditing = !!window.currentAssignmentId;
+        const url = isEditing
+          ? `http://localhost:3003/api/classes/${window.currentClassId || ''}/assignments/${window.currentAssignmentId}`
+          : 'http://localhost:3003/api/classes/assignments';
+        const method = isEditing ? 'PUT' : 'POST';
+        const body = isEditing
+          ? JSON.stringify({ title, description, deadline: deadlineDate, min_words: minWords ? parseInt(minWords) : null, max_words: maxWords ? parseInt(maxWords) : null })
+          : JSON.stringify({ title, description, grade, class_name, deadline: deadlineDate, min_words: minWords ? parseInt(minWords) : null, max_words: maxWords ? parseInt(maxWords) : null });
+
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          // 发布成功后删除对应草稿
+          if (window.currentDraftId) {
+            let drafts = JSON.parse(localStorage.getItem('assignmentDrafts') || '[]');
+            drafts = drafts.filter(d => d.id !== window.currentDraftId);
+            localStorage.setItem('assignmentDrafts', JSON.stringify(drafts));
+            updateDraftBadge();
+          }
+          alert('作业发布成功！');
+          goBack();
+        } else {
+          alert('发布失败：' + (data.error || '未知错误'));
+        }
+      } catch (err) {
+        console.error('发布作业失败:', err);
+        alert('发布失败，请检查服务器连接');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      // 检查登录状态
+      if (!authUtils.checkAuth() || !authUtils.checkRole('teacher')) {
+        window.location.href = 'teacher-login.html';
+        return;
+      }
+
+      const user = authUtils.getUserInfo();
+      document.getElementById('teacherName').textContent = user.real_name || user.username;
+
+      // 从URL读取classId并自动选中对应班级
+      const urlParams = new URLSearchParams(window.location.search);
+      const classIdParam = urlParams.get('classId');
+      if (classIdParam) {
+        const classCards = document.querySelectorAll('.class-card');
+        classCards.forEach(card => {
+          if (card.getAttribute('onclick')?.includes(`'${classIdParam}'`)) {
+            card.classList.add('selected');
+            const selectedInput = document.getElementById('selectedClasses');
+            selectedInput.value = card.querySelector('h5').textContent;
+            updatePreview();
+          }
+        });
+      }
+
+      // 设置默认日期为明天
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      document.getElementById('deadlineDate').value = tomorrow.toISOString().split('T')[0];
+
+      // 加载草稿（支持从草稿箱打开编辑）
+      const draftIdParam = urlParams.get('draftId');
+      if (draftIdParam) {
+        window.currentDraftId = parseInt(draftIdParam);
+        const drafts = JSON.parse(localStorage.getItem('assignmentDrafts') || '[]');
+        const draft = drafts.find(d => d.id === window.currentDraftId);
+        if (draft) {
+          document.getElementById('assignmentTitle').value = draft.title || '';
+          document.getElementById('assignmentType').value = draft.type || '';
+          document.getElementById('writingPoints').value = draft.points || '';
+          document.getElementById('minWords').value = draft.minWords || '';
+          document.getElementById('maxWords').value = draft.maxWords || '';
+          document.getElementById('referenceText').value = draft.referenceText || '';
+          document.getElementById('req2').checked = !!draft.req2;
+          document.getElementById('req3').checked = !!draft.req3;
+          document.getElementById('req4').checked = !!draft.req4;
+          if (draft.classes) {
+            document.getElementById('selectedClasses').value = draft.classes;
+            document.querySelectorAll('.class-card').forEach(card => {
+              if (card.querySelector('h5')?.textContent === draft.classes) {
+                card.classList.add('selected');
+              }
+            });
+          }
+          if (draft.deadline) {
+            const [date, time] = draft.deadline.split(' ');
+            document.getElementById('deadlineDate').value = date;
+            document.getElementById('deadlineTime').value = time || '18:00';
+          }
+          updatePreview();
+        }
+      }
+
+      // 支持从班级详情页编辑跳转（editId参数）
+      const editIdParam = urlParams.get('editId');
+      if (editIdParam) {
+        window.currentAssignmentId = parseInt(editIdParam);
+        window.currentClassId = classIdParam || '';
+        // 优先从 sessionStorage 读取（由 class-detail.html 设置）
+        const savedData = sessionStorage.getItem('editingAssignment');
+        if (savedData) {
+          const a = JSON.parse(savedData);
+          sessionStorage.removeItem('editingAssignment');
+          window.currentAssignmentId = parseInt(editIdParam);
+          document.getElementById('assignmentTitle').value = a.title || '';
+          document.getElementById('writingPoints').value = a.description || '';
+          // 解析description中的字数要求
+          if (a.description) {
+            const wordMatch = a.description.match(/(\d+)-(\d+)字/);
+            if (wordMatch) {
+              document.getElementById('minWords').value = wordMatch[1];
+              document.getElementById('maxWords').value = wordMatch[2];
+            }
+          }
+          if (a.deadline) {
+            document.getElementById('deadlineDate').value = formatDate(a.deadline);
+            document.getElementById('deadlineTime').value = '18:00';
+          }
+          // 选中班级
+          if (a.class_name) {
+            document.getElementById('selectedClasses').value = a.class_name;
+            document.querySelectorAll('.class-card').forEach(card => {
+              if (card.querySelector('h5')?.textContent === a.class_name) {
+                card.classList.add('selected');
+              }
+            });
+          }
+          updatePreview();
+        }
+      }
+
+      // 初始化角标
+      updateDraftBadge();
+    });
+  </script>
+</body>
+</html>

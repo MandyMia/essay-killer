@@ -1,0 +1,2183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>功能中心 - 小学生作文智能批改背诵平台</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { background: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .navbar { background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .page-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px 0; margin-bottom: 0; border-radius: 0 0 20px 20px; }
+    .page-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 5px; }
+
+    /* Tab 样式 */
+    .feature-tabs { background: white; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 25px; }
+    .feature-tabs .nav-link { color: #666; font-weight: 600; padding: 15px 25px; border: none; border-bottom: 3px solid transparent; transition: all 0.3s; }
+    .feature-tabs .nav-link.active { color: #667eea; border-bottom-color: #667eea; background: none; }
+    .feature-tabs .nav-link:hover { color: #667eea; }
+    .tab-content { padding-top: 20px; }
+
+    /* 通用卡片 */
+    .card-box { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 20px; }
+
+    /* 上传区域 */
+    .upload-area { border: 3px dashed #667eea; border-radius: 15px; padding: 30px; text-align: center; background: #f8f9ff; transition: all 0.3s; cursor: pointer; }
+    .upload-area:hover { border-color: #5a67d8; background: #f0f4ff; }
+    .upload-area.dragover { border-color: #4c51bf; background: #e6f3ff; }
+    .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 15px; }
+    .preview-item { position: relative; background: #f8f9fa; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .preview-image { width: 100%; height: 120px; object-fit: cover; display: block; }
+    .preview-del { position: absolute; top: 6px; right: 6px; background: rgba(220,53,69,0.9); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; font-size: 12px; }
+    .preview-item:hover .preview-del { opacity: 1; }
+
+    /* 评分 */
+    .score-display { font-size: 3rem; font-weight: bold; text-align: center; color: #667eea; }
+    .score-badge { display: inline-block; padding: 6px 18px; border-radius: 20px; font-weight: 600; }
+    .score-excellent { background: #d4edda; color: #155724; }
+    .score-good { background: #cce5ff; color: #004085; }
+    .score-average { background: #fff3cd; color: #856404; }
+    .score-poor { background: #f8d7da; color: #721c24; }
+    .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 15px 0; }
+    .metric-item { text-align: center; padding: 12px; background: #f8f9fa; border-radius: 10px; }
+    .metric-val { font-size: 1.3rem; font-weight: bold; color: #667eea; }
+    .metric-label { font-size: 0.8rem; color: #666; margin-top: 4px; }
+
+    /* 原文/批改/优化 区块 */
+    .original-block { background: #fff3cd; padding: 15px; border-radius: 10px; border-left: 4px solid #ffc107; margin-bottom: 15px; }
+    .ai-block { background: #e7f3ff; padding: 15px; border-radius: 10px; border-left: 4px solid #667eea; margin-bottom: 15px; }
+    .optimized-block { background: #d4edda; padding: 15px; border-radius: 10px; border-left: 4px solid #28a745; margin-bottom: 15px; }
+
+    /* 高分作文卡片 */
+    .essay-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 15px; transition: all 0.3s; cursor: pointer; }
+    .essay-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .essay-card h5 { color: #667eea; margin-bottom: 8px; }
+
+    /* 背诵模式 */
+    .recite-text { font-size: 20px; line-height: 2.2; padding: 30px; background: white; border-radius: 12px; min-height: 300px; white-space: pre-wrap; }
+    .recite-text.hidden-mode { color: transparent; background: #f0f0f0; }
+    .timer-display { font-size: 2.5rem; font-weight: bold; color: #667eea; text-align: center; }
+
+    /* 按钮 */
+    .btn-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; padding: 10px 24px; font-weight: 600; transition: all 0.3s; }
+    .btn-gradient:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102,126,234,0.4); color: white; }
+    .btn-generate { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; border-radius: 10px; padding: 12px 30px; font-weight: 600; font-size: 1.1rem; transition: all 0.3s; }
+    .btn-generate:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(245,87,108,0.4); color: white; }
+
+    /* Toast */
+    .toast-msg { position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 250px; padding: 12px 20px; border-radius: 10px; color: white; font-weight: 500; animation: slideIn 0.3s ease; }
+
+    /* 上传提醒样式 */
+    .upload-warning-bar {
+      background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 14px;
+      line-height: 1.5;
+      box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+      animation: pulse-warning 0.5s ease;
+    }
+    .upload-warning-bar .warning-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .upload-warning-bar .warning-content {
+      flex: 1;
+    }
+    .upload-warning-bar strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+    @keyframes pulse-warning {
+      0% { transform: scale(0.95); opacity: 0; }
+      50% { transform: scale(1.02); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* 缩略图上的单页提示 */
+    .preview-hint {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: rgba(255, 152, 0, 0.9);
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: help;
+    }
+
+    /* 可编辑区域样式 */
+    .editable-block {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      min-height: 100px;
+      cursor: text;
+      transition: all 0.2s ease;
+      position: relative;
+      line-height: 2;
+      white-space: pre-wrap;
+    }
+    .editable-block:hover {
+      border-color: #dee2e6;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    .editable-block:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+    .editable-block .edit-hint {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      color: #adb5bd;
+      font-size: 14px;
+      pointer-events: none;
+    }
+    .editable-block:hover .edit-hint,
+    .editable-block:focus .edit-hint {
+      opacity: 1;
+    }
+
+    /* 保存提示 */
+    .save-indicator {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #28a745;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+      animation: slideUpFade 0.3s ease, fadeOut 0.5s ease 1.5s forwards;
+      z-index: 9999;
+    }
+    @keyframes slideUpFade {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes fadeOut {
+      to { opacity: 0; transform: translateY(-10px); }
+    }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* 空状态 */
+    .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+    .empty-state i { font-size: 4rem; margin-bottom: 15px; opacity: 0.3; }
+
+    /* 打印 */
+    @media print { .navbar, .page-header, .feature-tabs, .no-print { display: none !important; } .recite-text { font-size: 18pt; } }
+
+    /* ========== 作业中心样式 ========== */
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transition: all 0.3s;
+    }
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+    .stat-primary .stat-icon { background: #e7f3ff; color: #667eea; }
+    .stat-success .stat-icon { background: #d4edda; color: #28a745; }
+    .stat-warning .stat-icon { background: #fff3cd; color: #ffc107; }
+    .stat-info-card .stat-icon { background: #f8d7da; color: #17a2b8; }
+    .stat-info { flex: 1; }
+    .stat-value { font-size: 1.8rem; font-weight: 700; color: #333; line-height: 1.2; }
+    .stat-label { font-size: 0.85rem; color: #666; margin-top: 2px; }
+
+    .homework-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transition: all 0.3s;
+      border-left: 4px solid #dee2e6;
+    }
+    .homework-card:hover {
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .homework-card.not_started { border-left-color: #6c757d; }
+    .homework-card.submitted { border-left-color: #17a2b8; }
+    .homework-card.graded { border-left-color: #28a745; }
+    .homework-card.overdue { border-left-color: #dc3545; }
+
+    .homework-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .homework-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #333;
+      margin: 0;
+    }
+    .homework-status {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .status-not_started { background: #e9ecef; color: #6c757d; }
+    .status-submitted { background: #d1ecf1; color: #0c5460; }
+    .status-graded { background: #d4edda; color: #155724; }
+    .status-overdue { background: #f8d7da; color: #721c24; }
+
+    .homework-meta {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 10px;
+    }
+    .homework-meta i { margin-right: 5px; }
+
+    .homework-desc {
+      font-size: 0.9rem;
+      color: #555;
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      white-space: pre-line;
+      line-height: 1.6;
+    }
+
+    .homework-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .score-display-mini {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+    .score-high { background: #d4edda; color: #155724; }
+    .score-medium { background: #fff3cd; color: #856404; }
+    .score-low { background: #f8d7da; color: #721c24; }
+
+    /* 问题高亮样式 */
+    .original-text-container {
+      background: #fff3cd;
+      padding: 15px;
+      border-radius: 10px;
+      border-left: 4px solid #ffc107;
+      max-height: 400px;
+      overflow-y: auto;
+      line-height: 2;
+      font-size: 15px;
+    }
+    .issue-highlight {
+      background: rgba(255, 193, 7, 0.4);
+      border-bottom: 2px solid #dc3545;
+      cursor: pointer;
+      padding: 0 2px;
+      border-radius: 2px;
+      transition: all 0.2s;
+    }
+    .issue-highlight:hover {
+      background: rgba(255, 193, 7, 0.6);
+    }
+    .issue-highlight.accepted {
+      background: rgba(40, 167, 69, 0.3);
+      border-bottom-color: #28a745;
+    }
+    .issue-highlight.ignored {
+      background: rgba(108, 117, 125, 0.2);
+      border-bottom-color: #6c757d;
+      text-decoration: line-through;
+    }
+
+    /* 问题卡片样式 */
+    .issue-card {
+      border-left: 4px solid #dc3545;
+      background: #fff;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transition: all 0.2s;
+    }
+    .issue-card:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .issue-card.accepted {
+      border-left-color: #28a745;
+      opacity: 0.7;
+    }
+    .issue-card.ignored {
+      border-left-color: #6c757d;
+      opacity: 0.5;
+    }
+    .issue-card.active {
+      border-left-width: 6px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+    }
+
+    /* 问题类型标签 */
+    .issue-type-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .issue-type-typo { background: #f8d7da; color: #721c24; }
+    .issue-type-logic { background: #cce5ff; color: #004085; }
+    .issue-type-punctuation { background: #fff3cd; color: #856404; }
+    .issue-type-structure { background: #d1e7dd; color: #0f5132; }
+
+    /* 问题修正预览 */
+    .issue-correction {
+      background: #f8f9fa;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin: 8px 0;
+    }
+    .issue-correction del {
+      color: #dc3545;
+      background: #f8d7da;
+      padding: 0 4px;
+      border-radius: 3px;
+    }
+    .issue-correction ins {
+      color: #28a745;
+      background: #d4edda;
+      padding: 0 4px;
+      border-radius: 3px;
+      text-decoration: none;
+    }
+
+    /* 分析进度 */
+    .analysis-loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 15px;
+      background: #e7f3ff;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    /* 批量操作栏 */
+    .batch-actions {
+      background: #f8f9fa;
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+      <a class="navbar-brand" href="正式首页.html">
+        <i class="bi bi-mortarboard-fill text-primary me-2"></i><strong>作文批改平台</strong>
+      </a>
+      <div class="d-flex align-items-center">
+        <!-- 测试账号切换器 -->
+        <div class="dropdown me-2">
+          <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-person-badge me-1"></i>测试账号
+          </button>
+          <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 280px;">
+            <p class="mb-2 text-muted small">选择测试账号快速切换：</p>
+            <div class="d-grid gap-2">
+              <button class="btn btn-outline-primary btn-sm" onclick="quickLogin('teacher001', '123456', 'teacher')">
+                <i class="bi bi-person me-1"></i>教师：李老师
+              </button>
+              <button class="btn btn-outline-success btn-sm" onclick="quickLogin('parent001', '123456', 'parent')">
+                <i class="bi bi-people me-1"></i>家长：王小明
+              </button>
+            </div>
+          </div>
+        </div>
+        <span class="text-muted me-2"><i class="bi bi-person-circle me-1"></i><span id="username">用户</span></span>
+        <button class="btn btn-sm btn-outline-primary me-2" onclick="showModifyClassModal()">
+          <i class="bi bi-pencil-square me-1"></i>修改班级
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="logout()"><i class="bi bi-box-arrow-right me-1"></i>退出</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 页头 -->
+  <div class="page-header">
+    <div class="container">
+      <h1 class="page-title"><i class="bi bi-grid-3x3-gap-fill me-2"></i>功能中心</h1>
+      <p class="mb-0 opacity-75">作业中心 · 作文批改 · 高分作文 · 背诵模式</p>
+    </div>
+  </div>
+
+  <!-- 被踢出提示 -->
+  <div class="container mt-3" id="blockedAlert" style="display: none;">
+    <div class="alert alert-danger d-flex align-items-center" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <div>
+        <strong>您已被移出班级</strong>
+        <p class="mb-0" id="blockedReason"></p>
+        <button class="btn btn-danger btn-sm mt-2" onclick="applyRejoin()">
+          <i class="bi bi-arrow-repeat me-1"></i>申请重新加入
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container mt-4 mb-5">
+    <!-- Tab 导航 -->
+    <div class="feature-tabs">
+      <ul class="nav nav-tabs border-0" id="featureTabs">
+        <li class="nav-item"><a class="nav-link active" data-tab="homework" onclick="switchTab('homework')"><i class="bi bi-list-task me-1"></i>作业中心</a></li>
+        <li class="nav-item"><a class="nav-link" data-tab="grading" onclick="switchTab('grading')"><i class="bi bi-pen me-1"></i>作文批改</a></li>
+        <li class="nav-item"><a class="nav-link" data-tab="highscore" onclick="switchTab('highscore')"><i class="bi bi-star-fill me-1"></i>高分作文</a></li>
+        <li class="nav-item"><a class="nav-link" data-tab="recite" onclick="switchTab('recite')"><i class="bi bi-book me-1"></i>背诵模式</a></li>
+      </ul>
+    </div>
+
+    <!-- ==================== Tab0: 作业中心 ==================== -->
+    <div id="tab-homework" class="tab-pane">
+      <!-- 学习概览卡片 -->
+      <div class="row mb-4" id="statsSection">
+        <div class="col-md-3">
+          <div class="stat-card stat-primary">
+            <div class="stat-icon"><i class="bi bi-file-earmark-text"></i></div>
+            <div class="stat-info">
+              <div class="stat-value" id="statWeekly">-</div>
+              <div class="stat-label">本周作文</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-card stat-success">
+            <div class="stat-icon"><i class="bi bi-trophy"></i></div>
+            <div class="stat-info">
+              <div class="stat-value" id="statScore">-</div>
+              <div class="stat-label">平均得分</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-card stat-warning">
+            <div class="stat-icon"><i class="bi bi-clock-history"></i></div>
+            <div class="stat-info">
+              <div class="stat-value" id="statPending">-</div>
+              <div class="stat-label">待完成作业</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-card stat-info-card">
+            <div class="stat-icon"><i class="bi bi-check-circle"></i></div>
+            <div class="stat-info">
+              <div class="stat-value" id="statCompleted">-</div>
+              <div class="stat-label">已完成</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 鼓励消息 -->
+      <div class="alert alert-light d-flex align-items-center mb-4" id="encourageMsg" style="display:none;">
+        <i class="bi bi-lightbulb me-2 text-warning fs-4"></i>
+        <span id="encourageText"></span>
+      </div>
+
+      <!-- 作业列表 -->
+      <div class="card-box">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0"><i class="bi bi-list-check me-2 text-primary"></i>作业列表</h5>
+          <button class="btn btn-sm btn-outline-primary" onclick="loadAssignments()">
+            <i class="bi bi-arrow-clockwise me-1"></i>刷新
+          </button>
+        </div>
+        <div id="homeworkList">
+          <div class="text-center text-muted py-5">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p>加载中...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== Tab1: 作文批改 ==================== -->
+    <div id="tab-grading" class="tab-pane" style="display:none;">
+      <div class="row">
+        <!-- 左侧：上传+文本 -->
+        <div class="col-lg-7">
+          <div class="card-box">
+            <h5 class="mb-3"><i class="bi bi-cloud-upload me-2 text-primary"></i>上传手写作文</h5>
+
+            <!-- 上传提醒警告条 -->
+            <div id="uploadWarningBar" class="upload-warning-bar" style="display:none;">
+              <span class="warning-icon">⚠️</span>
+              <div class="warning-content">
+                <strong>重要提示：每张图片请只拍一页作文！</strong>
+                不要将左右两页或上下多页拍在同一张图片里，否则 OCR 识别将出错。
+              </div>
+            </div>
+
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+              <i class="bi bi-image" style="font-size:3rem;color:#667eea;"></i>
+              <p class="mt-2 mb-1">点击或拖拽图片到这里</p>
+              <small class="text-muted">支持JPG/PNG，最多9张 | <span class="text-danger fw-bold">⚠️ 每张图片请只拍一页</span></small>
+              <input type="file" id="fileInput" multiple accept="image/jpeg,image/png" style="display:none">
+            </div>
+            <div id="previewSection" style="display:none" class="mt-3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted">已选 <strong id="imgCount">0</strong>/9 张</span>
+                <button class="btn btn-sm btn-outline-danger" onclick="clearImages()"><i class="bi bi-x-circle me-1"></i>清空</button>
+              </div>
+              <div id="previewGrid" class="preview-grid"></div>
+              <div class="text-center mt-3">
+                <button class="btn btn-gradient" onclick="performOCR()"><i class="bi bi-magic me-2"></i>识别文字</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-box">
+            <h5 class="mb-3"><i class="bi bi-file-text me-2 text-primary"></i>作文内容</h5>
+            <div class="mb-3">
+              <label class="form-label">题目</label>
+              <input type="text" class="form-control" id="essayTitle" placeholder="请输入作文题目">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">内容 <small class="text-muted">（<span id="wordCount">0</span>字）</small></label>
+              <textarea class="form-control" id="essayContent" rows="8" placeholder="上传图片识别后自动填入，也可手动输入" oninput="updateWordCount()"></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">年级</label>
+              <select class="form-select" id="essayGrade">
+                <option>三年级</option><option>四年级</option><option selected>五年级</option><option>六年级</option>
+              </select>
+            </div>
+            <div class="d-grid gap-2">
+              <button class="btn btn-gradient" onclick="startGrading()" id="btnGrade"><i class="bi bi-robot me-2"></i>开始AI批改</button>
+              <button class="btn btn-success" onclick="submitHomework()" id="btnSubmitHomework">
+                <i class="bi bi-upload me-2"></i>提交作业
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧：批改结果 -->
+        <div class="col-lg-5">
+          <div id="gradingResult" style="display:none">
+            <div class="card-box text-center">
+              <div class="score-display" id="totalScore">85</div>
+              <div class="mt-2 mb-3"><span class="score-badge" id="scoreBadge">良好</span></div>
+              <div class="metric-grid" id="metricsGrid"></div>
+            </div>
+
+            <div class="card-box">
+              <h6 class="mb-2"><i class="bi bi-chat-left-quote me-2 text-info"></i>AI评语</h6>
+              <div id="aiComment"></div>
+            </div>
+
+            <div class="card-box">
+              <h6 class="mb-2"><i class="bi bi-lightbulb me-2 text-warning"></i>改进建议</h6>
+              <ul id="suggestionsList" class="mb-0"></ul>
+            </div>
+
+            <!-- 问题分析面板 -->
+            <div id="issuePanel" style="display:none">
+              <div class="card-box">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h6 class="mb-0"><i class="bi bi-exclamation-triangle me-2 text-danger"></i>问题批注</h6>
+                  <span id="issueSummary" class="badge bg-danger">0 处问题</span>
+                </div>
+
+                <!-- 分析加载状态 -->
+                <div id="analysisLoading" class="analysis-loading" style="display:none">
+                  <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                  <span>正在分析作文...</span>
+                </div>
+
+                <!-- 批量操作栏 -->
+                <div id="batchActions" class="batch-actions" style="display:none">
+                  <span id="pendingCount">0 个待处理</span>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-success" onclick="acceptAllIssues()"><i class="bi bi-check-all me-1"></i>全部采纳</button>
+                    <button class="btn btn-outline-secondary" onclick="ignoreAllIssues()"><i class="bi bi-x-lg me-1"></i>全部忽略</button>
+                  </div>
+                </div>
+
+                <!-- 问题列表 -->
+                <div id="issueList" class="mb-3"></div>
+              </div>
+
+              <!-- 原文批注区 -->
+              <div class="card-box">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h6 class="mb-0"><i class="bi bi-card-text me-2 text-warning"></i>原文批注</h6>
+                  <button class="btn btn-sm btn-outline-primary" onclick="applyCorrections()" id="btnApplyCorrections">
+                    <i class="bi bi-check2 me-1"></i>应用修正到正文
+                  </button>
+                </div>
+                <div class="original-text-container" id="originalTextContainer"></div>
+              </div>
+            </div>
+
+            <!-- 生成优化作文按钮 -->
+            <div class="text-center my-3" id="generateBtnWrap">
+              <button class="btn btn-generate" onclick="generateOptimized()" id="btnGenerate">
+                <i class="bi bi-magic me-2"></i>AI生成优化后作文
+              </button>
+            </div>
+
+            <!-- 优化后作文展示 -->
+            <div id="optimizedSection" style="display:none">
+              <div class="card-box">
+                <h6 class="mb-2">
+                  <i class="bi bi-star-fill me-2 text-success"></i>优化后作文
+                  <small class="text-muted fw-normal ms-2"><i class="bi bi-pencil"></i> 可直接编辑</small>
+                </h6>
+                <div class="editable-block" id="optimizedText" contenteditable="true" spellcheck="true"></div>
+                <div class="d-grid gap-2 mt-3">
+                  <button class="btn btn-success" onclick="saveToHighScore()"><i class="bi bi-save me-2"></i>保存到高分作文</button>
+                  <button class="btn btn-outline-primary" onclick="goRecite()"><i class="bi bi-book me-2"></i>背诵此作文</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 未批改时的提示 -->
+          <div id="gradingPlaceholder" class="card-box text-center text-muted py-5">
+            <i class="bi bi-robot" style="font-size:4rem;opacity:0.2;"></i>
+            <p class="mt-3">上传作文并点击"开始AI批改"<br>批改结果将在这里显示</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== Tab2: 高分作文 ==================== -->
+    <div id="tab-highscore" class="tab-pane" style="display:none">
+      <div id="highScoreList"></div>
+      <div id="highScoreEmpty" class="empty-state" style="display:none">
+        <i class="bi bi-star"></i>
+        <h5>还没有高分作文</h5>
+        <p class="text-muted">去"作文批改"中批改作文并生成优化版本</p>
+        <button class="btn btn-gradient mt-3" onclick="switchTab('grading')"><i class="bi bi-pen me-2"></i>去批改作文</button>
+      </div>
+      <!-- 详情视图 -->
+      <div id="highScoreDetail" style="display:none">
+        <button class="btn btn-outline-secondary mb-3" onclick="showHighScoreList()"><i class="bi bi-arrow-left me-1"></i>返回列表</button>
+        <div class="card-box">
+          <h4 id="detailTitle" class="mb-2"></h4>
+          <p class="text-muted mb-3"><span id="detailDate"></span> | <span id="detailScore"></span></p>
+          <h6 class="mb-2">原文</h6>
+          <div class="original-block" id="detailOriginal"></div>
+          <h6 class="mb-2 mt-3">
+            优化后作文
+            <small class="text-muted fw-normal ms-2"><i class="bi bi-pencil"></i> 可直接编辑</small>
+          </h6>
+          <div class="editable-block" id="detailOptimized" contenteditable="true" spellcheck="true"></div>
+          <div class="mt-3">
+            <button class="btn btn-gradient" onclick="reciteFromDetail()"><i class="bi bi-book me-2"></i>背诵此作文</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== Tab3: 背诵模式 ==================== -->
+    <div id="tab-recite" class="tab-pane" style="display:none">
+      <div class="card-box no-print">
+        <div class="row align-items-center">
+          <div class="col-md-4 mb-2">
+            <label class="form-label mb-1">选择作文</label>
+            <select class="form-select" id="reciteSelect" onchange="loadReciteContent()"></select>
+          </div>
+          <div class="col-md-3 mb-2">
+            <label class="form-label mb-1">字号</label>
+            <input type="range" class="form-range" min="16" max="28" value="20" id="fontSizeSlider" oninput="adjustFontSize(this.value)">
+          </div>
+          <div class="col-md-5 mb-2 text-end">
+            <div class="btn-group">
+              <button class="btn btn-outline-primary btn-sm" onclick="toggleReciteText()" id="btnToggle"><i class="bi bi-eye-slash me-1"></i>隐藏</button>
+              <button class="btn btn-outline-primary btn-sm" onclick="window.print()"><i class="bi bi-printer me-1"></i>打印</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-box">
+        <div class="recite-text" id="reciteText">请选择一篇作文开始背诵</div>
+      </div>
+
+      <div class="card-box no-print text-center">
+        <div class="timer-display" id="timerDisplay">00:00</div>
+        <div class="mt-3">
+          <button class="btn btn-gradient me-2" onclick="toggleTimer()" id="btnTimer"><i class="bi bi-play-fill me-1"></i>开始</button>
+          <button class="btn btn-outline-secondary" onclick="resetTimer()"><i class="bi bi-arrow-counterclockwise me-1"></i>重置</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/auth-utils.js"></script>
+  <script>
+    const API = 'http://localhost:3003';
+    let selectedImages = [];
+    let currentGrading = null;
+    let currentOptimized = null;
+    let currentIssues = [];  // 当前问题列表
+    let acceptedCorrections = new Set();  // 已采纳的修正ID
+    let ignoredCorrections = new Set();  // 已忽略的修正ID
+    let timerInterval = null;
+    let timerSeconds = 0;
+    let timerRunning = false;
+    let correctedText = '';  // 应用修正后的文本
+
+    // ===== 初始化 =====
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof authUtils !== 'undefined' && authUtils.checkAuth()) {
+        // 禁止教师访问家长端页面
+        if (authUtils.checkRole('teacher')) {
+          alert('家长端页面不允许教师访问');
+          window.location.href = 'teacher-dashboard.html';
+          return;
+        }
+        const user = authUtils.getUserInfo();
+        document.getElementById('username').textContent = user.real_name || user.username || '用户';
+      }
+      setupDragDrop();
+      document.getElementById('fileInput').addEventListener('change', e => handleFiles(Array.from(e.target.files)));
+      // 初始化时显示一次提醒
+      setTimeout(() => showUploadWarning(), 500);
+      // 初始化作业中心数据
+      loadAssignmentStats();
+      loadAssignments();
+    });
+
+    // ===== Tab 切换 =====
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+      document.getElementById('tab-' + tab).style.display = 'block';
+      document.querySelectorAll('#featureTabs .nav-link').forEach(el => el.classList.remove('active'));
+      document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+      if (tab === 'homework') {
+        loadAssignmentStats();
+        loadAssignments();
+      }
+      if (tab === 'highscore') renderHighScoreList();
+      if (tab === 'recite') populateReciteSelect();
+    }
+
+    // ===== 作业中心 =====
+
+    // 前端模拟数据（后端 API 不可用时直接使用）
+    const MOCK_ASSIGNMENTS = [
+      {
+        id: 1,
+        title: '《难忘的小学生活》',
+        description: '写一篇关于小学难忘经历的作文，字数不少于400字。要求：\n1. 叙事清楚，有真情实感\n2. 注意细节描写\n3. 结构完整',
+        grade: '五年级',
+        className: '1班',
+        deadline: '2026-05-08',
+        createdAt: new Date().toISOString(),
+        status: 'not_started',
+        essayId: null,
+        score: null
+      },
+      {
+        id: 2,
+        title: '《我的理想》',
+        description: '描述你的理想以及如何实现它。字数不少于350字。',
+        grade: '五年级',
+        className: '1班',
+        deadline: '2026-05-12',
+        createdAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+        status: 'submitted',
+        essayId: 201,
+        score: null
+      },
+      {
+        id: 3,
+        title: '《春游》',
+        description: '记录一次春游的所见所闻，描写春天的景色和你的感受。字数不少于300字。',
+        grade: '五年级',
+        className: '1班',
+        deadline: '2026-04-28',
+        createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+        status: 'graded',
+        essayId: 202,
+        score: 88
+      },
+      {
+        id: 4,
+        title: '《秋天的田野》',
+        description: '观察秋天的田野，写出你看到的景象。\n1. 描写一种或几种农作物\n2. 表达对秋天的感受\n3. 字数：不少于300字',
+        grade: '五年级',
+        className: '1班',
+        deadline: '2026-04-25',
+        createdAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+        status: 'graded',
+        essayId: 203,
+        score: 92
+      }
+    ];
+
+    // 从模拟数据计算统计
+    function computeStats(assignments) {
+      const graded = assignments.filter(a => a.status === 'graded');
+      const pending = assignments.filter(a => a.status === 'not_started');
+      const completed = assignments.filter(a => a.status === 'submitted' || a.status === 'graded');
+      const avgScore = graded.length > 0
+        ? Math.round(graded.reduce((sum, a) => sum + (a.score || 0), 0) / graded.length)
+        : 0;
+
+      let message = '';
+      if (pending.length === 0) {
+        message = '太棒了！所有作业都已完成，继续保持！';
+      } else if (pending.length <= 2) {
+        message = `还有${pending.length}篇作业未完成，加油！`;
+      } else {
+        message = `有${pending.length}篇作业待完成，建议尽快安排时间。`;
+      }
+
+      return {
+        weeklyEssays: assignments.length,
+        averageScore: avgScore,
+        pendingAssignments: pending.length,
+        completedAssignments: completed.length,
+        totalGraded: graded.length,
+        message
+      };
+    }
+
+    async function loadAssignmentStats() {
+      try {
+        const res = await fetch(API + '/api/assignments/stats/summary');
+        const data = await res.json();
+        if (data.success && data.data && !data.isMock) {
+          const stats = data.data;
+          document.getElementById('statWeekly').textContent = stats.weeklyEssays + '篇';
+          document.getElementById('statScore').textContent = stats.averageScore > 0 ? stats.averageScore + '分' : '暂无';
+          document.getElementById('statPending').textContent = stats.pendingAssignments + '篇';
+          document.getElementById('statCompleted').textContent = stats.completedAssignments + '篇';
+          if (stats.message) {
+            document.getElementById('encourageText').textContent = stats.message;
+            document.getElementById('encourageMsg').style.display = 'flex';
+          }
+          return;
+        }
+      } catch (e) {
+        console.warn('后端统计API不可用，使用前端模拟');
+      }
+      // 使用模拟数据
+      const stats = computeStats(MOCK_ASSIGNMENTS);
+      document.getElementById('statWeekly').textContent = stats.weeklyEssays + '篇';
+      document.getElementById('statScore').textContent = stats.averageScore > 0 ? stats.averageScore + '分' : '暂无';
+      document.getElementById('statPending').textContent = stats.pendingAssignments + '篇';
+      document.getElementById('statCompleted').textContent = stats.completedAssignments + '篇';
+      document.getElementById('encourageText').textContent = stats.message;
+      document.getElementById('encourageMsg').style.display = 'flex';
+    }
+
+    async function loadAssignments() {
+      const list = document.getElementById('homeworkList');
+
+      try {
+        const res = await fetch(API + '/api/assignments');
+        const data = await res.json();
+
+        if (data.success && data.data && data.data.length > 0 && !data.isMock) {
+          renderHomeworkList(data.data);
+          return;
+        }
+      } catch (e) {
+        console.warn('后端作业API不可用，使用前端模拟');
+      }
+      // 使用模拟数据
+      renderHomeworkList(MOCK_ASSIGNMENTS);
+    }
+
+    function renderHomeworkList(assignments) {
+      const list = document.getElementById('homeworkList');
+
+      list.innerHTML = assignments.map(hw => {
+        const statusClass = getStatusClass(hw.status, hw.deadline);
+        const statusText = getStatusText(hw.status, hw.deadline);
+        const deadlineInfo = hw.deadline ? formatDate(hw.deadline) : '无截止日期';
+        const scoreHtml = hw.score ? getScoreHtml(hw.score) : '';
+        const actions = getHomeworkActions(hw);
+
+        return `
+          <div class="homework-card ${statusClass}">
+            <div class="homework-header">
+              <h5 class="homework-title">${escapeHtml(hw.title)}</h5>
+              <div class="d-flex align-items-center gap-2">
+                ${scoreHtml}
+                <span class="homework-status ${statusClass}">${statusText}</span>
+              </div>
+            </div>
+            <div class="homework-meta">
+              <i class="bi bi-calendar3"></i>截止：${deadlineInfo}
+              ${hw.grade ? `<span class="ms-3"><i class="bi bi-mortarboard"></i>${hw.grade} ${hw.className || ''}</span>` : ''}
+            </div>
+            ${hw.description ? `<div class="homework-desc">${escapeHtml(hw.description)}</div>` : ''}
+            <div class="homework-actions">${actions}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function getStatusClass(status, deadline) {
+      if (status === 'graded') return 'graded';
+      if (status === 'submitted') return 'submitted';
+      if (status === 'pending') return 'not_started';
+
+      // 检查是否过期
+      if (deadline) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const deadlineDate = new Date(deadline);
+        deadlineDate.setHours(0, 0, 0, 0);
+        if (deadlineDate < today && (status === 'not_started' || status === 'pending')) {
+          return 'overdue';
+        }
+      }
+      return 'not_started';
+    }
+
+    function getStatusText(status, deadline) {
+      if (status === 'graded') return '已批改';
+      if (status === 'submitted') return '待批改';
+      if (status === 'pending') return '待完成';
+
+      if (deadline) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const deadlineDate = new Date(deadline);
+        deadlineDate.setHours(0, 0, 0, 0);
+        if (deadlineDate < today && status === 'not_started') {
+          return '已过期';
+        }
+      }
+      return '待完成';
+    }
+
+    function getScoreHtml(score) {
+      let scoreClass = 'score-medium';
+      if (score >= 90) scoreClass = 'score-high';
+      else if (score < 75) scoreClass = 'score-low';
+
+      return `<span class="score-display-mini ${scoreClass}"><i class="bi bi-star-fill"></i>${score}分</span>`;
+    }
+
+    function getHomeworkActions(hw) {
+      const status = hw.status;
+      if (status === 'graded') {
+        return `
+          <button class="btn btn-success btn-sm" onclick="viewGrading(${hw.essayId})">
+            <i class="bi bi-eye me-1"></i>查看反馈
+          </button>
+          <button class="btn btn-outline-primary btn-sm" onclick="reciteEssayFromHomework(${hw.essayId})">
+            <i class="bi bi-book me-1"></i>背诵
+          </button>
+        `;
+      } else if (status === 'submitted') {
+        return `
+          <button class="btn btn-outline-info btn-sm" disabled>
+            <i class="bi bi-hourglass-split me-1"></i>批改中
+          </button>
+        `;
+      } else {
+        // not_started / pending / overdue
+        return `
+          <button class="btn btn-primary btn-sm" onclick="startHomework(${hw.id})">
+            <i class="bi bi-pen me-1"></i>去完成
+          </button>
+        `;
+      }
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      return `${date.getMonth() + 1}月${date.getDate()}日`;
+    }
+
+    function startHomework(assignmentId) {
+      // 从模拟数据或当前列表中查找作业信息
+      const hw = MOCK_ASSIGNMENTS.find(a => a.id === assignmentId);
+      const title = hw ? hw.title : '';
+      const description = hw ? hw.description : '';
+      const grade = hw ? hw.grade : '五年级';
+
+      // 切换到作文批改 Tab
+      switchTab('grading');
+
+      // 填充作业标题
+      if (title) {
+        document.getElementById('essayTitle').value = title;
+      }
+
+      // 设置年级下拉框
+      const gradeSelect = document.getElementById('essayGrade');
+      if (grade && Array.from(gradeSelect.options).some(o => o.value === grade)) {
+        gradeSelect.value = grade;
+      }
+
+      // 显示作业要求提示
+      if (description) {
+        toast('作业要求：\n' + description, 'info');
+      }
+
+      // 将作业ID存储到sessionStorage，供提交时使用
+      sessionStorage.setItem('currentAssignmentId', assignmentId);
+    }
+
+    function viewGrading(essayId) {
+      // 检查是否为模拟数据的 essayId
+      const mockEssayIds = MOCK_ASSIGNMENTS.filter(a => a.status === 'graded').map(a => a.essayId);
+      if (mockEssayIds.includes(essayId)) {
+        const hw = MOCK_ASSIGNMENTS.find(a => a.essayId === essayId);
+        toast(`《${hw.title}》得分：${hw.score}分，批改详情功能开发中`, 'info');
+        return;
+      }
+      window.location.href = 'essay-detail.html?id=' + essayId;
+    }
+
+    function reciteEssayFromHomework(essayId) {
+      // 检查是否为模拟数据
+      const mockEssayIds = MOCK_ASSIGNMENTS.filter(a => a.status === 'graded').map(a => a.essayId);
+      if (mockEssayIds.includes(essayId)) {
+        const hw = MOCK_ASSIGNMENTS.find(a => a.essayId === essayId);
+        toast(`《${hw.title}》背诵功能需要先保存到高分作文`, 'info');
+        return;
+      }
+      // 查找高分作文列表中对应的作文并背诵
+      const essays = JSON.parse(localStorage.getItem('highScoreEssays') || '[]');
+      const essay = essays.find(e => e.id === 'hw_' + essayId || e.essayId === essayId);
+      if (essay) {
+        window._reciteEssayId = essay.id;
+      }
+      switchTab('recite');
+    }
+
+    // ===== 提交作业 =====
+    async function submitHomework() {
+      const assignmentId = sessionStorage.getItem('currentAssignmentId');
+      const title = document.getElementById('essayTitle').value.trim();
+      const content = document.getElementById('essayContent').value.trim();
+
+      if (!assignmentId) {
+        toast('请先从作业中心选择一个作业，再点击"去完成"', 'warning');
+        return;
+      }
+      if (!title && !content) {
+        toast('请先输入作文题目和内容', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('btnSubmitHomework');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>提交中...';
+
+      try {
+        const res = await fetch(API + '/api/assignments/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            assignmentId: parseInt(assignmentId),
+            title: title || '未命名作文',
+            content: content
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          toast('作业提交成功！', 'success');
+          // 更新本地模拟数据中的状态
+          const idx = MOCK_ASSIGNMENTS.findIndex(a => a.id === parseInt(assignmentId));
+          if (idx >= 0) {
+            MOCK_ASSIGNMENTS[idx].status = 'submitted';
+            MOCK_ASSIGNMENTS[idx].essayId = data.data?.essayId || 999;
+            renderHomeworkList(MOCK_ASSIGNMENTS);
+          }
+          // 切换回作业中心
+          setTimeout(() => switchTab('homework'), 1500);
+        } else {
+          toast(data.error || '提交失败', 'error');
+        }
+      } catch (e) {
+        console.error('提交作业失败:', e);
+        toast('提交失败，请检查网络', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-upload me-2"></i>提交作业';
+      }
+    }
+    function setupDragDrop() {
+      const area = document.getElementById('uploadArea');
+      area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('dragover'); });
+      area.addEventListener('dragleave', () => area.classList.remove('dragover'));
+      area.addEventListener('drop', e => {
+        e.preventDefault();
+        area.classList.remove('dragover');
+        handleFiles(Array.from(e.dataTransfer.files));
+      });
+    }
+
+    function handleFiles(files) {
+      const imgs = files.filter(f => f.type.startsWith('image/'));
+
+      // 触发单页提醒
+      if (imgs.length > 0) {
+        showUploadWarning();
+      }
+
+      if (!imgs.length) return toast('请选择图片文件', 'error');
+      const remain = 9 - selectedImages.length;
+
+      // 检查是否超过限制
+      if (files.length > remain && remain > 0) {
+        toast(`最多上传 9 张图片，已添加前 ${remain} 张`, 'warning');
+      } else if (remain <= 0 && files.length > 0) {
+        toast('最多上传 9 张图片，已达上限', 'error');
+        showUploadWarning();  // 超出限制时也显示提醒
+        return;
+      }
+
+      imgs.slice(0, remain).forEach(f => selectedImages.push({ id: Date.now() + Math.random(), file: f, url: URL.createObjectURL(f) }));
+      renderPreview();
+    }
+
+    // 显示上传单页提醒
+    function showUploadWarning() {
+      const warningBar = document.getElementById('uploadWarningBar');
+      warningBar.style.display = 'flex';
+
+      // 重新触发动画
+      warningBar.style.animation = 'none';
+      warningBar.offsetHeight;  // 强制重绘
+      warningBar.style.animation = 'pulse-warning 0.5s ease';
+
+      // 3.5秒后隐藏
+      setTimeout(() => {
+        warningBar.style.display = 'none';
+      }, 3500);
+    }
+
+    function renderPreview() {
+      const sec = document.getElementById('previewSection');
+      const grid = document.getElementById('previewGrid');
+      document.getElementById('imgCount').textContent = selectedImages.length;
+      if (selectedImages.length) {
+        sec.style.display = 'block';
+        grid.innerHTML = selectedImages.map((img, idx) => `
+          <div class="preview-item">
+            <img src="${img.url}" class="preview-image">
+            <span class="preview-hint" title="请确保这张图片只包含一页作文，不要包含多页">第${idx + 1}页</span>
+            <button class="preview-del" onclick="removeImage('${img.id}')"><i class="bi bi-x"></i></button>
+          </div>`).join('');
+      } else { sec.style.display = 'none'; }
+    }
+
+    function removeImage(id) {
+      const idx = selectedImages.findIndex(i => i.id == id);
+      if (idx > -1) { URL.revokeObjectURL(selectedImages[idx].url); selectedImages.splice(idx, 1); renderPreview(); }
+    }
+
+    function clearImages() { selectedImages.forEach(i => URL.revokeObjectURL(i.url)); selectedImages = []; renderPreview(); }
+
+    // ===== 文本清理 =====
+    /**
+     * 清理 OCR 识别结果中的乱码字符、干扰符号、控制字符。
+     * 保留中文、日文、字母数字、常用标点、换行。
+     * 过滤页眉、页码、手写杂记。
+     */
+    function cleanText(text) {
+      if (!text) return '';
+
+      // 第一步：替换常见乱码符号为空
+      const replacements = {
+        '�': '',      // 替换字符
+        '□': '',      // 方框
+        '■': '',      // 黑方框
+        '☐': '',      // 空心方框
+        '☑': '',      // 选中方框
+        '☒': '',      // 叉选方框
+        '○': '',      // 圆圈
+        '●': '',      // 实心圆
+        '口': '',     // 口字框（OCR 常见误识别）
+        '曰': '',     // 曰字框
+        '囗': '',     // 囗
+        '　': ' ',    // 全角空格
+        '​': '',      // 零宽空格
+        '‌': '',      // 零宽非连接符
+        '‍': '',      // 零宽连接符
+        '␣': '',     // 空格符号
+      };
+      let cleaned = text;
+      for (const [old, neo] of Object.entries(replacements)) {
+        cleaned = cleaned.split(old).join(neo);
+      }
+
+      // 第二步：过滤所有非标准字符（CJK + 字母数字 + 常用标点 + 空白）
+      const valid = [];
+      for (const ch of cleaned) {
+        const c = ch.codePointAt(0);
+        if (
+          (0x4E00 <= c && c <= 0x9FFF) ||   // CJK 统一汉字
+          (0x3400 <= c && c <= 0x4DBF) ||   // CJK 扩展 A
+          (0x3000 <= c && c <= 0x303F) ||   // CJK 标点
+          (0xFF00 <= c && c <= 0xFFEF) ||   // 全角 ASCII
+          (0x0020 <= c && c <= 0x007E) ||   // 半角 ASCII 可打印
+          (ch === '\n' || ch === '\r' || ch === '\t') ||
+          (0x3001 <= c && c <= 0x3002)      // 句号/逗号
+        ) {
+          valid.push(ch);
+        } else if (c < 32 && ch !== '\n' && ch !== '\r') {
+          // 跳过控制字符（但保留换行和回车）
+        } else if (0x0080 <= c && c <= 0x009F) {
+          // 跳过 C1 控制字符
+        } else if (0x2000 <= c && c <= 0x206F) {
+          // 跳过一般标点符号区（可保留部分）
+        }
+        // 其他字符忽略
+      }
+      cleaned = valid.join('');
+
+      // 第三步：规范化空白
+      cleaned = cleaned.replace(/[ \t]+/g, ' ');      // 多个空格合并为1个
+      cleaned = cleaned.replace(/\n{3,}/g, '\n\n');   // 超过2个换行压缩为2个
+
+      // 第四步：智能插入换行（在句号/感叹号/问号后加强制换行）
+      cleaned = cleaned.replace(/([。！？!])\s*/g, '$1\n');
+
+      // 第五步：去除每行首尾空白
+      cleaned = cleaned.split('\n').map(l => l.trim()).join('\n');
+
+      // 第六步：去除连续空行
+      cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+
+      // 第七步：过滤噪声行（页眉、页码等）
+      const noisePatterns = [
+        /^[-—]{2,}\s*第\s*\d+\s*页\s*[-—]{2,}$/i,  // --- 第4页 ---
+        /^第\s*\d+\s*页$/i,                          // 第4页
+        /^[-—]+\s*\d+\s*[-—]+$/i,                   // -- 4 --
+        /^date$/i,                                    // DATE
+        /^no\.?$/i,                                   // No, No.
+        /^1\/3$/i, /^2\/3$/i, /^3\/3$/i,           // 页码
+        /^p\.?\s*\d+$/i,                             // P.1
+        /^page\s*\d+$/i,                             // page 1
+        /^c\s*再叨叨$/i,                             // C 再叨叨
+        /^再叨叨$/i,                                 // 再叨叨
+        /^书写时间$/i, /^年级$/i, /^姓名$/i, /^班级$/i,
+      ];
+
+      cleaned = cleaned
+        .split('\n')
+        .filter(line => {
+          const trimmed = line.trim();
+          if (!trimmed) return false;
+          // 过滤匹配噪声模式的行
+          for (const pattern of noisePatterns) {
+            if (pattern.test(trimmed)) {
+              return false;
+            }
+          }
+          return true;
+        })
+        .join('\n');
+
+      // 第八步：过滤行内嵌入的页码标记
+      cleaned = cleaned
+        .replace(/[-—]{2,}\s*第\s*\d+\s*页\s*[-—]{2,}/g, '')
+        .replace(/[-—]+\s*\d+\s*[-—]+/g, '');
+
+      // 第九步：最终清理
+      cleaned = cleaned
+        .replace(/^[—\-\s]+$/g, '')  // 纯分隔线行
+        .replace(/\n{3,}/g, '\n\n')  // 连续空行
+        .split('\n')
+        .map(l => l.trim())
+        .filter(l => l && !/^[—\-]+$/.test(l))
+        .join('\n');
+
+      return cleaned.trim();
+    }
+
+    // ===== OCR =====
+    async function performOCR() {
+      if (!selectedImages.length) return toast('请先上传图片', 'error');
+      toast('正在识别文字...', 'info');
+
+      // 逐张图片识别，拼接结果
+      let allText = '';
+      for (let i = 0; i < selectedImages.length; i++) {
+        try {
+          const fd = new FormData();
+          fd.append('image', selectedImages[i].file);
+          const res = await fetch(API + '/api/ocr', { method: 'POST', body: fd });
+          const data = await res.json();
+          if (res.ok && data.success && data.text) {
+            // 后端已做噪声过滤和分行处理，前端再做一层辅助清理
+            const cleaned = cleanText(data.text);
+            // 多页拼接时用换行分隔，不再插入 "--- 第X页 ---" 标记
+            const separator = allText ? '\n\n' : '';
+            allText += separator + cleaned;
+          } else {
+            toast('第' + (i + 1) + '张图片识别失败: ' + (data.error || '未知错误'), 'warning');
+          }
+        } catch (e) {
+          console.warn('OCR请求失败:', e);
+          toast('OCR服务暂不可用，请手动输入作文内容', 'warning');
+          return;
+        }
+      }
+
+      if (allText) {
+        document.getElementById('essayContent').value = allText;
+        updateWordCount();
+        toast('OCR识别成功，共识别 ' + selectedImages.length + ' 张图片', 'success');
+      } else {
+        toast('未能识别到文字，请手动输入', 'warning');
+      }
+    }
+
+    function updateWordCount() {
+      document.getElementById('wordCount').textContent = document.getElementById('essayContent').value.length;
+    }
+
+    // ===== AI批改 =====
+    async function startGrading() {
+      const title = document.getElementById('essayTitle').value.trim();
+      const content = document.getElementById('essayContent').value.trim();
+      if (!title) return toast('请输入作文题目', 'error');
+      if (!content) return toast('请输入作文内容', 'error');
+
+      const btn = document.getElementById('btnGrade');
+      btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>批改中...';
+
+      try {
+        const res = await fetch(API + '/api/essays/correct', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: content, grade: document.getElementById('essayGrade').value, title })
+        });
+        if (res.ok) { const data = await res.json(); currentGrading = data; }
+      } catch (e) { console.warn('批改API不可用，使用本地模拟'); }
+
+      if (!currentGrading) currentGrading = simulateGrading(content, title);
+      displayGradingResult();
+      btn.disabled = false; btn.innerHTML = '<i class="bi bi-robot me-2"></i>开始AI批改';
+    }
+
+    function simulateGrading(text, title) {
+      const len = text.length;
+      const base = Math.min(95, Math.max(60, 60 + len / 20));
+      const score = Math.round(base + Math.random() * 10);
+      const contentS = Math.round(18 + Math.random() * 7);
+      const structS = Math.round(17 + Math.random() * 8);
+      const langS = Math.round(16 + Math.random() * 9);
+      const creatS = score - contentS - structS - langS;
+      return {
+        score, level: score >= 90 ? '优秀' : score >= 80 ? '良好' : score >= 60 ? '及格' : '待改进',
+        metrics: { content: contentS, structure: structS, language: langS, creativity: Math.max(0, creatS) },
+        overallComment: '这是一篇' + (score >= 80 ? '优秀的' : '不错的') + '作文！主题明确，表达清晰，能够较好地传达自己的想法和感受。',
+        strengths: ['主题明确，内容切题', '语言通顺，表达流畅', '结构完整，层次清晰'],
+        suggestions: ['可以加入更多细节描写，使内容更生动', '尝试使用一些成语和修辞手法', '结尾可以更有深度，升华主题']
+      };
+    }
+
+    function displayGradingResult() {
+      const g = currentGrading;
+      document.getElementById('gradingPlaceholder').style.display = 'none';
+      document.getElementById('gradingResult').style.display = 'block';
+      document.getElementById('totalScore').textContent = g.score;
+
+      const badge = document.getElementById('scoreBadge');
+      badge.textContent = g.level;
+      badge.className = 'score-badge ' + (g.score >= 90 ? 'score-excellent' : g.score >= 80 ? 'score-good' : g.score >= 60 ? 'score-average' : 'score-poor');
+
+      const m = g.metrics;
+      document.getElementById('metricsGrid').innerHTML = [
+        ['内容', m.content], ['结构', m.structure], ['语言', m.language], ['创意', m.creativity]
+      ].map(([l, v]) => `<div class="metric-item"><div class="metric-val">${v}</div><div class="metric-label">${l}(25)</div></div>`).join('');
+
+      document.getElementById('aiComment').innerHTML = `<p class="mb-2">${g.overallComment}</p>` +
+        (g.strengths ? `<strong>优点：</strong><ul>${g.strengths.map(s => `<li>${s}</li>`).join('')}</ul>` : '');
+
+      document.getElementById('suggestionsList').innerHTML = (g.suggestions || []).map(s => `<li>${s}</li>`).join('');
+      document.getElementById('generateBtnWrap').style.display = 'block';
+      document.getElementById('optimizedSection').style.display = 'none';
+      currentOptimized = null;
+
+      // 显示问题分析面板
+      analyzeIssues();
+    }
+
+    // ===== 生成优化作文 =====
+    async function generateOptimized() {
+      const btn = document.getElementById('btnGenerate');
+      btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>生成中...';
+
+      // 使用修正后的文本（如果用户采纳了修正）
+      const textToUse = correctedText || document.getElementById('essayContent').value.trim();
+      const title = document.getElementById('essayTitle').value.trim();
+      const grade = document.getElementById('essayGrade').value;
+
+      try {
+        const res = await fetch(API + '/api/essays/generate-high-score', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ originalText: textToUse, grade, title })
+        });
+        if (res.ok) { const data = await res.json(); if (data.highScoreEssay) currentOptimized = data.highScoreEssay; }
+      } catch (e) { console.warn('优化API不可用，使用本地模拟'); }
+
+      if (!currentOptimized) currentOptimized = simulateOptimized(textToUse, title, grade);
+
+      document.getElementById('optimizedText').textContent = currentOptimized;
+      document.getElementById('optimizedSection').style.display = 'block';
+      document.getElementById('generateBtnWrap').style.display = 'none';
+      btn.disabled = false; btn.innerHTML = '<i class="bi bi-magic me-2"></i>AI生成优化后作文';
+      toast('优化作文已生成', 'success');
+
+      // 设置当前批改的优化作文编辑保存
+      setupEditableSave('optimizedText', 'current_grading', 'edited_optimized_');
+    }
+
+    // ===== 问题分析 =====
+    async function analyzeIssues() {
+      const content = document.getElementById('essayContent').value.trim();
+      if (!content) return;
+
+      // 重置状态
+      currentIssues = [];
+      acceptedCorrections = new Set();
+      ignoredCorrections = new Set();
+      correctedText = content;
+
+      // 显示面板和加载状态
+      document.getElementById('issuePanel').style.display = 'block';
+      document.getElementById('analysisLoading').style.display = 'flex';
+      document.getElementById('batchActions').style.display = 'none';
+      document.getElementById('issueList').innerHTML = '';
+      document.getElementById('issueSummary').textContent = '分析中...';
+
+      try {
+        const res = await fetch(API + '/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: content,
+            grade: document.getElementById('essayGrade').value
+          })
+        });
+
+        const data = await res.json();
+        if (data.success && data.issues) {
+          currentIssues = data.issues;
+        }
+      } catch (e) {
+        console.warn('问题分析API不可用:', e);
+      }
+
+      // 隐藏加载状态
+      document.getElementById('analysisLoading').style.display = 'none';
+
+      // 渲染问题列表和原文高亮
+      renderIssueList();
+      renderHighlightedText();
+      updateBatchActions();
+    }
+
+    function renderIssueList() {
+      const container = document.getElementById('issueList');
+      const summary = document.getElementById('issueSummary');
+
+      if (!currentIssues.length) {
+        summary.textContent = '未发现问题';
+        summary.className = 'badge bg-success';
+        container.innerHTML = '<div class="text-center text-muted py-3"><i class="bi bi-check-circle me-2"></i>很棒！没有发现问题</div>';
+        return;
+      }
+
+      summary.textContent = `${currentIssues.length} 处问题`;
+      summary.className = 'badge bg-danger';
+
+      container.innerHTML = currentIssues.map(issue => {
+        const typeLabel = { typo: '错别字', logic: '逻辑问题', punctuation: '标点错误', structure: '结构问题' }[issue.type] || '其他';
+        const typeClass = `issue-type-${issue.type}`;
+
+        const status = acceptedCorrections.has(issue.id) ? 'accepted' :
+                       ignoredCorrections.has(issue.id) ? 'ignored' : '';
+
+        return `
+          <div class="issue-card ${status}" id="issue-card-${issue.id}" data-issue-id="${issue.id}">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <span class="issue-type-badge ${typeClass}">${typeLabel}</span>
+                <small class="text-muted ms-2">${issue.reason || ''}</small>
+              </div>
+            </div>
+            <div class="issue-correction">
+              <del>${escapeHtml(issue.original)}</del> →
+              <ins>${escapeHtml(issue.corrected)}</ins>
+            </div>
+            <div class="small text-muted mb-2">
+              <i class="bi bi-quote me-1"></i>${escapeHtml(issue.sentence || '')}
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-success" onclick="acceptIssue('${issue.id}')" ${status ? 'disabled' : ''}>
+                <i class="bi bi-check me-1"></i>采纳
+              </button>
+              <button class="btn btn-sm btn-outline-secondary" onclick="ignoreIssue('${issue.id}')" ${status ? 'disabled' : ''}>
+                <i class="bi bi-x me-1"></i>忽略
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderHighlightedText() {
+      const container = document.getElementById('originalTextContainer');
+      const text = correctedText;
+
+      if (!currentIssues.length) {
+        container.innerHTML = `<p class="mb-0">${escapeHtml(text)}</p>`;
+        return;
+      }
+
+      // 按位置排序问题
+      const sortedIssues = [...currentIssues].sort((a, b) => a.startIndex - b.startIndex);
+
+      let html = '';
+      let lastIndex = 0;
+
+      for (const issue of sortedIssues) {
+        // 确保索引有效
+        if (issue.startIndex < 0 || issue.endIndex > text.length || issue.startIndex >= issue.endIndex) {
+          continue;
+        }
+
+        // 添加正常文本
+        html += escapeHtml(text.substring(lastIndex, issue.startIndex));
+
+        // 添加高亮文本
+        const status = acceptedCorrections.has(issue.id) ? 'accepted' :
+                       ignoredCorrections.has(issue.id) ? 'ignored' : '';
+        const highlightClass = status ? `issue-highlight ${status}` : 'issue-highlight';
+
+        html += `<span class="${highlightClass}" onclick="scrollToIssue('${issue.id}')" title="点击查看详情">${escapeHtml(text.substring(issue.startIndex, issue.endIndex))}</span>`;
+
+        lastIndex = issue.endIndex;
+      }
+
+      // 添加剩余文本
+      html += escapeHtml(text.substring(lastIndex));
+
+      container.innerHTML = html;
+    }
+
+    function scrollToIssue(issueId) {
+      const card = document.getElementById(`issue-card-${issueId}`);
+      if (card) {
+        // 移除其他卡片的active状态
+        document.querySelectorAll('.issue-card.active').forEach(el => el.classList.remove('active'));
+        card.classList.add('active');
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    function acceptIssue(issueId) {
+      acceptedCorrections.add(issueId);
+      ignoredCorrections.delete(issueId);
+
+      // 更新原文中的文本
+      const issue = currentIssues.find(i => i.id === issueId);
+      if (issue) {
+        correctedText = correctedText.substring(0, issue.startIndex) +
+                       issue.corrected +
+                       correctedText.substring(issue.endIndex);
+
+        // 调整后续问题的索引
+        const diff = issue.corrected.length - (issue.endIndex - issue.startIndex);
+        currentIssues.forEach(i => {
+          if (i.id !== issueId && i.startIndex > issue.startIndex) {
+            i.startIndex += diff;
+            i.endIndex += diff;
+          }
+        });
+      }
+
+      renderIssueList();
+      renderHighlightedText();
+      updateBatchActions();
+    }
+
+    function ignoreIssue(issueId) {
+      ignoredCorrections.add(issueId);
+      acceptedCorrections.delete(issueId);
+      renderIssueList();
+      renderHighlightedText();
+      updateBatchActions();
+    }
+
+    function acceptAllIssues() {
+      currentIssues.forEach(issue => {
+        if (!acceptedCorrections.has(issue.id) && !ignoredCorrections.has(issue.id)) {
+          acceptIssue(issue.id);
+        }
+      });
+    }
+
+    function ignoreAllIssues() {
+      currentIssues.forEach(issue => {
+        if (!ignoredCorrections.has(issue.id)) {
+          ignoreIssue(issue.id);
+        }
+      });
+    }
+
+    function updateBatchActions() {
+      const pending = currentIssues.filter(i =>
+        !acceptedCorrections.has(i.id) && !ignoredCorrections.has(i.id)
+      ).length;
+
+      document.getElementById('pendingCount').textContent = `${pending} 个待处理`;
+      document.getElementById('batchActions').style.display = currentIssues.length > 0 ? 'flex' : 'none';
+    }
+
+    function applyCorrections() {
+      const originalTextarea = document.getElementById('essayContent');
+      originalTextarea.value = correctedText;
+      updateWordCount();
+      toast('已应用修正到正文', 'success');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function simulateOptimized(text, title, grade) {
+      const sentences = text.split(/[。！？；]/).filter(s => s.trim());
+      const enhanced = sentences.map(s => {
+        let e = s.trim();
+        if (e.length < 5) return e;
+        const addons = ['，仿佛置身于一幅美丽的画卷之中', '，让人不禁心生欢喜', '，如诗如画般美好', '，令人心旷神怡'];
+        if (Math.random() > 0.6) e += addons[Math.floor(Math.random() * addons.length)];
+        return e;
+      });
+      const intro = `${title}，是一个让人充满感触的话题。每当想起，心中总会涌起一股暖流。`;
+      const ending = '\n回首这一切，我深深地感受到生活中的美好无处不在。只要我们用心去观察、去感受，就能发现身边处处是风景。这将成为我记忆中最珍贵的一部分。';
+      return intro + '\n\n' + enhanced.join('。') + '。' + ending;
+    }
+
+    // ===== 保存到高分作文 =====
+    function saveToHighScore() {
+      // 从可编辑区域获取最新内容
+      const optimizedText = document.getElementById('optimizedText').textContent || currentOptimized;
+      const essays = JSON.parse(localStorage.getItem('highScoreEssays') || '[]');
+      essays.unshift({
+        id: 'hs_' + Date.now(),
+        title: document.getElementById('essayTitle').value.trim(),
+        originalText: document.getElementById('essayContent').value.trim(),
+        optimizedText: optimizedText,
+        score: currentGrading.score,
+        grade: document.getElementById('essayGrade').value,
+        createdAt: new Date().toISOString()
+      });
+      localStorage.setItem('highScoreEssays', JSON.stringify(essays));
+      toast('已保存到高分作文', 'success');
+    }
+
+    // ===== 高分作文列表 =====
+    function renderHighScoreList() {
+      const essays = JSON.parse(localStorage.getItem('highScoreEssays') || '[]');
+      const listEl = document.getElementById('highScoreList');
+      const emptyEl = document.getElementById('highScoreEmpty');
+      document.getElementById('highScoreDetail').style.display = 'none';
+      listEl.style.display = 'block';
+
+      if (!essays.length) { listEl.innerHTML = ''; emptyEl.style.display = 'block'; return; }
+      emptyEl.style.display = 'none';
+      listEl.innerHTML = essays.map(e => `
+        <div class="essay-card" onclick="viewHighScore('${e.id}')">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <h5 class="mb-1">${e.title}</h5>
+              <p class="text-muted mb-0 small">${e.grade} | ${new Date(e.createdAt).toLocaleDateString('zh-CN')} | ${e.score}分</p>
+              <p class="mt-2 mb-0">${e.optimizedText.substring(0, 80)}...</p>
+            </div>
+            <div class="d-flex gap-1">
+              <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();reciteEssay('${e.id}')"><i class="bi bi-book"></i></button>
+              <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();deleteHighScore('${e.id}')"><i class="bi bi-trash"></i></button>
+            </div>
+          </div>
+        </div>`).join('');
+    }
+
+    function viewHighScore(id) {
+      const essays = JSON.parse(localStorage.getItem('highScoreEssays') || '[]');
+      const e = essays.find(x => x.id === id);
+      if (!e) return;
+
+      // 检查是否有本地编辑的缓存
+      const cacheKey = `edited_optimized_${id}`;
+      const cachedText = localStorage.getItem(cacheKey);
+      const displayText = cachedText || e.optimizedText;
+
+      document.getElementById('highScoreList').style.display = 'none';
+      document.getElementById('highScoreEmpty').style.display = 'none';
+      document.getElementById('highScoreDetail').style.display = 'block';
+      document.getElementById('detailTitle').textContent = e.title;
+      document.getElementById('detailDate').textContent = new Date(e.createdAt).toLocaleDateString('zh-CN');
+      document.getElementById('detailScore').textContent = e.score + '分';
+      document.getElementById('detailOriginal').textContent = e.originalText;
+      document.getElementById('detailOptimized').textContent = displayText;
+      window._detailEssayId = id;
+      window._detailOriginalText = e.optimizedText;  // 保存原始文本用于对比
+
+      // 设置详情页编辑区域的保存事件
+      setupEditableSave('detailOptimized', id, 'edited_optimized_');
+    }
+
+    function showHighScoreList() { renderHighScoreList(); }
+
+    function deleteHighScore(id) {
+      if (!confirm('确定删除？')) return;
+      const essays = JSON.parse(localStorage.getItem('highScoreEssays') || '[]').filter(e => e.id !== id);
+      localStorage.setItem('highScoreEssays', JSON.stringify(essays));
+      renderHighScoreList();
+      toast('已删除', 'success');
+    }
+
+    function reciteEssay(id) {
+      window._reciteEssayId = id;
+      switchTab('recite');
+    }
+
+    function reciteFromDetail() {
+      window._reciteEssayId = window._detailEssayId;
+      switchTab('recite');
+    }
+
+    // ===== 背诵模式 =====
+    function populateReciteSelect() {
+      const essays = JSON.parse(localStorage.getItem('highScoreEssays') || '[]');
+      const sel = document.getElementById('reciteSelect');
+      sel.innerHTML = '<option value="">-- 请选择 --</option>' +
+        essays.map(e => `<option value="${e.id}">${e.title}（${e.score}分）</option>`).join('');
+      if (window._reciteEssayId) { sel.value = window._reciteEssayId; loadReciteContent(); window._reciteEssayId = null; }
+    }
+
+    function loadReciteContent() {
+      const id = document.getElementById('reciteSelect').value;
+      if (!id) { document.getElementById('reciteText').textContent = '请选择一篇作文开始背诵'; return; }
+      const essays = JSON.parse(localStorage.getItem('highScoreEssays') || '[]');
+      const e = essays.find(x => x.id === id);
+      if (e) {
+        // 优先使用编辑后的内容
+        const editedContent = getEditedContent(id, 'edited_optimized_', e.optimizedText);
+        document.getElementById('reciteText').textContent = editedContent;
+      }
+    }
+
+    function adjustFontSize(size) { document.getElementById('reciteText').style.fontSize = size + 'px'; }
+
+    function toggleReciteText() {
+      const el = document.getElementById('reciteText');
+      const btn = document.getElementById('btnToggle');
+      if (el.classList.contains('hidden-mode')) {
+        el.classList.remove('hidden-mode');
+        btn.innerHTML = '<i class="bi bi-eye-slash me-1"></i>隐藏';
+      } else {
+        el.classList.add('hidden-mode');
+        btn.innerHTML = '<i class="bi bi-eye me-1"></i>显示';
+      }
+    }
+
+    // ===== 计时器 =====
+    function toggleTimer() {
+      const btn = document.getElementById('btnTimer');
+      if (timerRunning) {
+        clearInterval(timerInterval); timerRunning = false;
+        btn.innerHTML = '<i class="bi bi-play-fill me-1"></i>继续';
+      } else {
+        timerRunning = true;
+        timerInterval = setInterval(() => {
+          timerSeconds++;
+          const m = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+          const s = (timerSeconds % 60).toString().padStart(2, '0');
+          document.getElementById('timerDisplay').textContent = m + ':' + s;
+        }, 1000);
+        btn.innerHTML = '<i class="bi bi-pause-fill me-1"></i>暂停';
+      }
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval); timerRunning = false; timerSeconds = 0;
+      document.getElementById('timerDisplay').textContent = '00:00';
+      document.getElementById('btnTimer').innerHTML = '<i class="bi bi-play-fill me-1"></i>开始';
+    }
+
+    // ===== 跳转背诵 =====
+    function goRecite() {
+      const essays = JSON.parse(localStorage.getItem('highScoreEssays') || '[]');
+      if (essays.length) window._reciteEssayId = essays[0].id;
+      switchTab('recite');
+    }
+
+    // ===== 测试账号快速登录 =====
+    async function quickLogin(username, password, role) {
+      try {
+        const loginApi = role === 'teacher'
+          ? API + '/api/auth/teacher/login'
+          : API + '/api/auth/parent/login';
+
+        const res = await fetch(loginApi, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.user) {
+          localStorage.setItem('isAuthenticated', 'true');
+          localStorage.setItem('userRole', role);
+          localStorage.setItem('userInfo', JSON.stringify(data.user));
+          toast('已切换到：' + data.user.real_name, 'success');
+          const redirectUrl = role === 'teacher'
+            ? 'teacher-dashboard.html'
+            : 'feature-center.html';
+          setTimeout(() => window.location.href = redirectUrl, 500);
+        } else {
+          toast('登录失败：' + (data.error || '未知错误'), 'error');
+        }
+      } catch (err) {
+        toast('登录失败，请检查服务器连接', 'error');
+      }
+    }
+
+    // ===== 退出 =====
+    function logout() {
+      if (!confirm('确定退出登录？')) return;
+      fetch(API + '/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      }).catch(() => {}).finally(() => {
+        if (typeof authUtils !== 'undefined') authUtils.clearAuth();
+        localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('userInfo');
+        window.location.href = '正式首页.html';
+      });
+    }
+
+    // ===== Toast =====
+    function toast(msg, type) {
+      const colors = { success: '#28a745', error: '#dc3545', warning: '#ffc107', info: '#17a2b8' };
+      const el = document.createElement('div');
+      el.className = 'toast-msg';
+      el.style.background = colors[type] || colors.info;
+      if (type === 'warning') el.style.color = '#333';
+      el.innerHTML = `<i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info-circle'} me-2"></i>${msg}`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    // ===== 可编辑区域功能 =====
+    // 防抖保存计时器
+    let saveDebounceTimer = null;
+
+    /**
+     * 设置可编辑区域的保存事件
+     * @param {string} elementId - 要设置的元素ID
+     * @param {string} contentId - 内容标识符（用于localStorage key）
+     * @param {string} storagePrefix - localStorage key 前缀
+     */
+    function setupEditableSave(elementId, contentId, storagePrefix) {
+      const element = document.getElementById(elementId);
+      if (!element) return;
+
+      // 移除旧的事件监听器（通过克隆元素实现）
+      const newElement = element.cloneNode(true);
+      element.parentNode.replaceChild(newElement, element);
+
+      // 处理粘贴为纯文本（移除格式）
+      newElement.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+        // 保留换行
+        const formattedText = text.replace(/\r?\n/g, '\n');
+        document.execCommand('insertText', false, formattedText);
+      });
+
+      // 失焦时保存（带防抖）
+      newElement.addEventListener('blur', function() {
+        debounceSave(newElement.textContent, contentId, storagePrefix);
+      });
+
+      // 内容变化时显示保存提示
+      newElement.addEventListener('input', function() {
+        clearTimeout(saveDebounceTimer);
+        saveDebounceTimer = setTimeout(() => {
+          debounceSave(newElement.textContent, contentId, storagePrefix);
+        }, 2000); // 2秒无操作后自动保存
+      });
+    }
+
+    /**
+     * 防抖保存函数
+     */
+    function debounceSave(content, contentId, storagePrefix) {
+      if (!content || content.trim() === '') return;
+
+      const key = storagePrefix + contentId;
+      const existing = localStorage.getItem(key);
+
+      // 只有内容变化时才保存
+      if (existing !== content) {
+        localStorage.setItem(key, content);
+        showSaveIndicator();
+      }
+    }
+
+    /**
+     * 显示保存提示
+     */
+    function showSaveIndicator() {
+      // 移除已存在的提示
+      const existing = document.querySelector('.save-indicator');
+      if (existing) existing.remove();
+
+      const indicator = document.createElement('div');
+      indicator.className = 'save-indicator';
+      indicator.innerHTML = '<i class="bi bi-check-circle me-1"></i>已保存';
+      document.body.appendChild(indicator);
+
+      // 2秒后自动移除
+      setTimeout(() => indicator.remove(), 2000);
+    }
+
+    /**
+     * 获取编辑后的内容（优先返回本地缓存）
+     */
+    function getEditedContent(contentId, storagePrefix, originalContent) {
+      const key = storagePrefix + contentId;
+      const edited = localStorage.getItem(key);
+      return edited || originalContent;
+    }
+
+    /**
+     * 清除特定内容的本地缓存
+     */
+    function clearEditedCache(contentId, storagePrefix) {
+      const key = storagePrefix + contentId;
+      localStorage.removeItem(key);
+    }
+
+    // ===== 修改班级功能 =====
+    function showModifyClassModal() {
+      const modal = new bootstrap.Modal(document.getElementById('modifyClassModal'));
+      modal.show();
+    }
+
+    function loadNewClassOptions() {
+      const grade = document.getElementById('newGrade').value;
+      const classSelect = document.getElementById('newClassName');
+
+      if (!grade) {
+        classSelect.innerHTML = '<option value="">请先选择年级</option>';
+        return;
+      }
+
+      let options = '<option value="">请选择班级</option>';
+      for (let i = 1; i <= 15; i++) {
+        options += `<option value="${i}班">${i}班</option>`;
+      }
+      classSelect.innerHTML = options;
+    }
+
+    async function confirmModifyClass() {
+      const grade = document.getElementById('newGrade').value;
+      const className = document.getElementById('newClassName').value;
+
+      if (!grade || !className) {
+        toast('请填写完整的年级和班级信息', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch(API + '/api/parent/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ grade, class_name: className })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          toast('班级信息修改成功！', 'success');
+          bootstrap.Modal.getInstance(document.getElementById('modifyClassModal')).hide();
+
+          const user = authUtils.getUserInfo();
+          user.grade = grade;
+          user.class_name = className;
+          localStorage.setItem('userInfo', JSON.stringify(user));
+
+          document.getElementById('currentClass').value = `${grade} ${className}`;
+        } else {
+          toast(result.error || '修改失败，请重试', 'error');
+        }
+      } catch (error) {
+        console.error('修改班级失败:', error);
+        toast('网络错误，请重试', 'error');
+      }
+    }
+
+    async function applyRejoin() {
+      if (!confirm('确定要申请重新加入班级吗？')) return;
+
+      try {
+        const response = await fetch(API + '/api/parent/class-status');
+        const result = await response.json();
+
+        if (result.success && result.data.blockedClassId) {
+          const approveResponse = await fetch(
+            API + '/api/classes/' + result.data.blockedClassId + '/students/' + authUtils.getUserInfo().id + '/approve',
+            { method: 'POST' }
+          );
+
+          const approveResult = await approveResponse.json();
+
+          if (approveResult.success) {
+            toast('申请已提交，请等待老师审批！', 'success');
+            loadClassStatus();
+          } else {
+            toast(approveResult.error || '申请失败，请重试', 'error');
+          }
+        }
+      } catch (error) {
+        console.error('申请重新加入失败:', error);
+        toast('网络错误，请重试', 'error');
+      }
+    }
+
+    async function loadClassStatus() {
+      try {
+        const response = await fetch(API + '/api/parent/class-status');
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          const data = result.data;
+
+          document.getElementById('currentClass').value = `${data.grade || ''} ${data.className || ''}`;
+
+          if (data.isBlocked) {
+            document.getElementById('blockedAlert').style.display = 'block';
+            document.getElementById('blockedReason').textContent =
+              data.blockedReason ? `原因：${data.blockedReason}` : '请联系老师了解详情';
+          } else {
+            document.getElementById('blockedAlert').style.display = 'none';
+          }
+        }
+      } catch (error) {
+        console.error('加载班级状态失败:', error);
+      }
+    }
+
+    // 初始化时加载班级状态
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof authUtils !== 'undefined' && authUtils.checkAuth() && authUtils.checkRole('parent')) {
+        loadClassStatus();
+      }
+    });
+  </script>
+
+  <!-- 修改班级模态框 -->
+  <div class="modal fade" id="modifyClassModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-pencil-square me-2"></i>修改班级信息
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">当前班级</label>
+            <input type="text" class="form-control" id="currentClass" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">新年级 <span class="text-danger">*</span></label>
+            <select class="form-select" id="newGrade" required onchange="loadNewClassOptions()">
+              <option value="">请选择年级</option>
+              <option value="一年级">一年级</option>
+              <option value="二年级">二年级</option>
+              <option value="三年级">三年级</option>
+              <option value="四年级">四年级</option>
+              <option value="五年级">五年级</option>
+              <option value="六年级">六年级</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">新班级 <span class="text-danger">*</span></label>
+            <select class="form-select" id="newClassName" required>
+              <option value="">请先选择年级</option>
+            </select>
+          </div>
+          <p class="text-muted small">
+            <i class="bi bi-info-circle me-1"></i>
+            修改后，您将自动加入新班级，原班级将不再显示您的信息。
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+          <button type="button" class="btn btn-primary" onclick="confirmModifyClass()">
+            <i class="bi bi-check-circle me-1"></i>确认修改
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

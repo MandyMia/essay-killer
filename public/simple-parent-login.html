@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>家长登录</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .login-card {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    .login-title {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #333;
+    }
+    .btn-login {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 600;
+      width: 100%;
+    }
+    .back-link {
+      text-align: center;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <h2 class="login-title">
+      <i class="bi bi-person-circle me-2"></i>家长登录
+    </h2>
+
+    <form id="loginForm">
+      <div class="mb-3">
+        <label class="form-label">用户名</label>
+        <input type="text" class="form-control" id="username" required value="testparent001">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">密码</label>
+        <input type="password" class="form-control" id="password" required value="123456">
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-login">
+        登录
+      </button>
+    </form>
+
+    <div class="back-link">
+      <a href="正式首页.html" class="text-decoration-none">返回首页</a>
+    </div>
+
+    <div id="result" class="mt-3" style="display: none;"></div>
+  </div>
+
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const resultDiv = document.getElementById('result');
+
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">加载中...</span></div></div>';
+
+      try {
+        console.log('发送登录请求到:', 'http://localhost:3003/api/auth/parent/login');
+
+        const res = await fetch('http://localhost:3003/api/auth/parent/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ username, password })
+        });
+
+        console.log('响应状态:', res.status);
+        const data = await res.json();
+        console.log('响应数据:', data);
+
+        if (res.ok) {
+          resultDiv.innerHTML = `
+            <div class="alert alert-success">
+              ✅ 登录成功！用户ID: ${data.user.id}
+            </div>
+          `;
+          setTimeout(() => {
+            window.location.href = 'feature-center.html';
+          }, 1000);
+        } else {
+          resultDiv.innerHTML = `
+            <div class="alert alert-danger">
+              ❌ ${data.error || '登录失败'}
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.error('网络错误:', err);
+        resultDiv.innerHTML = `
+          <div class="alert alert-danger">
+            ❌ 网络错误: ${err.message}
+          </div>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>

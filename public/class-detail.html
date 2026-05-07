@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>班级详情 - 小学生作文智能批改背诵平台</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background: #f8f9fa;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .navbar {
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .main-container {
+      margin-top: 20px;
+      margin-bottom: 80px;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .stat-card.primary i { color: #667eea; }
+    .stat-card.success i { color: #28a745; }
+    .stat-card.warning i { color: #ffc107; }
+    .stat-card.info i { color: #17a2b8; }
+    .stat-card i {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+    .stat-card .stat-value {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #333;
+    }
+    .stat-card .stat-label {
+      font-size: 0.9rem;
+      color: #666;
+    }
+    .card-custom {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .table-custom {
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .table-custom thead {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .table-custom th {
+      border: none;
+      padding: 15px;
+      font-weight: 500;
+    }
+    .table-custom td {
+      border-color: #f0f0f0;
+      padding: 12px 15px;
+      vertical-align: middle;
+    }
+    .table-custom tbody tr:hover {
+      background: #f8f9ff;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+    }
+    .status-completed { background: #28a745; }
+    .status-pending { background: #ffc107; }
+    .status-needs_revision { background: #dc3545; }
+    .status-no_essay { background: #6c757d; }
+    .btn-action {
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+    }
+    .sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+    .sortable:hover {
+      color: #fff;
+    }
+    .sort-icon {
+      margin-left: 5px;
+      opacity: 0.7;
+    }
+    .filter-btn {
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 0.85rem;
+      margin: 0 3px;
+    }
+    .filter-btn.active {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+    .pagination-custom {
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .pagination-custom .page-link {
+      color: #667eea;
+      border-radius: 8px;
+      margin: 0 3px;
+    }
+    .pagination-custom .page-item.active .page-link {
+      background: #667eea;
+      border-color: #667eea;
+    }
+    .teacher-badge {
+      background: #28a745;
+      color: white;
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 5px;
+    }
+    .fixed-bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      padding: 15px 20px;
+      z-index: 100;
+    }
+    .loading-spinner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+    }
+    /* 作业进度条 */
+    .progress-text-bar {
+      font-family: monospace;
+      font-size: 12px;
+      letter-spacing: -1px;
+    }
+    /* 抽屉 */
+    .drawer-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.3); z-index: 1051;
+      opacity: 0; visibility: hidden; transition: all 0.3s ease;
+    }
+    .drawer-overlay.open { opacity: 1; visibility: visible; }
+    .drawer-panel {
+      position: fixed; top: 0; right: -480px; width: 480px; height: 100vh;
+      background: white; z-index: 1052; box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+      transition: right 0.3s ease; display: flex; flex-direction: column;
+    }
+    .drawer-panel.open { right: 0; }
+    .drawer-header {
+      padding: 20px 24px; border-bottom: 1px solid #f0f0f0;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .drawer-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+    .drawer-section { margin-bottom: 20px; }
+    .drawer-section-title {
+      font-weight: 600; color: #333; margin-bottom: 8px; font-size: 14px;
+    }
+    .assignment-detail-meta {
+      display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 16px;
+    }
+    .detail-tag {
+      background: #f0f0f0; border-radius: 20px; padding: 4px 12px;
+      font-size: 13px; color: #666;
+    }
+  </style>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+      <a class="navbar-brand" href="teacher-dashboard.html">
+        <i class="bi bi-mortarboard-fill text-primary me-2"></i>
+        <strong>小学生作文批改平台</strong>
+      </a>
+      <div class="d-flex align-items-center">
+        <a href="teacher-dashboard.html" class="btn btn-outline-primary btn-sm me-2">
+          <i class="bi bi-arrow-left me-1"></i> 返回
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container main-container">
+    <!-- 顶部班级信息卡片 -->
+    <div class="card-custom mb-4">
+      <h4 class="mb-3">
+        <i class="bi bi-people-fill text-primary me-2"></i>
+        <span id="className">班级详情</span>
+      </h4>
+      <div class="row" id="statsRow">
+        <div class="col-md-2 col-6 mb-3">
+          <div class="stat-card">
+            <i class="bi bi-mortarboard"></i>
+            <div class="stat-value" id="gradeValue">-</div>
+            <div class="stat-label">年级</div>
+          </div>
+        </div>
+        <div class="col-md-2 col-6 mb-3">
+          <div class="stat-card">
+            <i class="bi bi-person"></i>
+            <div class="stat-value" id="studentCount">0</div>
+            <div class="stat-label">学生人数</div>
+          </div>
+        </div>
+        <div class="col-md-2 col-6 mb-3">
+          <div class="stat-card">
+            <i class="bi bi-star"></i>
+            <div class="stat-value" id="avgScore">-</div>
+            <div class="stat-label">班级平均分</div>
+          </div>
+        </div>
+        <div class="col-md-2 col-6 mb-3">
+          <div class="stat-card">
+            <i class="bi bi-file-text"></i>
+            <div class="stat-value" id="totalEssays">0</div>
+            <div class="stat-label">总作文数</div>
+          </div>
+        </div>
+        <div class="col-md-2 col-6 mb-3">
+          <div class="stat-card warning">
+            <i class="bi bi-clock"></i>
+            <div class="stat-value" id="pendingCount">0</div>
+            <div class="stat-label">待批改</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 已布置作业 -->
+    <div class="card-custom mb-4" id="assignmentsSection">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">
+          <i class="bi bi-file-text text-primary me-2"></i>已布置作业
+          <span class="badge bg-secondary ms-2" id="assignmentCount">0</span>
+        </h5>
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary btn-sm" id="btnNewAssignment" onclick="goToNewAssignment()">
+            <i class="bi bi-plus-circle me-1"></i>布置新作业
+          </button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="goBackToClassList()">
+            <i class="bi bi-arrow-left me-1"></i>返回班级列表
+          </button>
+        </div>
+      </div>
+      <div id="assignmentsList">
+        <div class="text-center text-muted py-4">
+          <div class="spinner-border text-primary mb-2" role="status"></div>
+          <p>加载中...</p>
+        </div>
+      </div>
+      <!-- 空状态 -->
+      <div id="assignmentsEmpty" style="display:none;" class="text-center py-5">
+        <div style="font-size: 4rem; opacity: 0.3; margin-bottom: 16px;">📭</div>
+        <p class="text-muted">还没有布置过作业，点击"布置新作业"开始吧。</p>
+      </div>
+    </div>
+
+    <!-- 学生列表（可折叠） -->
+    <div class="card-custom">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">
+          <i class="bi bi-list-ul me-2"></i>学生名单
+          <span class="badge bg-secondary ms-2" id="studentCountBadge">0</span>
+        </h5>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary btn-sm" onclick="goToNewAssignment()">
+            <i class="bi bi-plus-circle me-1"></i>布置新作业
+          </button>
+          <button class="btn btn-outline-primary btn-sm" id="toggleStudentsBtn" onclick="toggleStudents()">
+            <i class="bi bi-chevron-up me-1"></i>收起
+          </button>
+        </div>
+      </div>
+
+      <!-- 筛选按钮 -->
+      <div class="mb-3">
+        <button class="btn btn-outline-secondary filter-btn active" onclick="filterByStatus('')">全部</button>
+        <button class="btn btn-outline-secondary filter-btn" onclick="filterByStatus('completed')">
+          <span class="status-dot status-completed"></span>已完成
+        </button>
+        <button class="btn btn-outline-secondary filter-btn" onclick="filterByStatus('pending')">
+          <span class="status-dot status-pending"></span>待批改
+        </button>
+        <button class="btn btn-outline-secondary filter-btn" onclick="filterByStatus('needs_revision')">
+          <span class="status-dot status-needs_revision"></span>需修改
+        </button>
+      </div>
+
+      <!-- 学生表格 -->
+      <div class="table-responsive">
+        <table class="table table-custom">
+          <thead>
+            <tr>
+              <th>学生姓名</th>
+              <th class="sortable" onclick="sortBy('latestEssay')">
+                最近作文 <i class="bi bi-chevron-expand sort-icon"></i>
+              </th>
+              <th class="sortable" onclick="sortBy('score')">
+                得分 <i class="bi bi-chevron-expand sort-icon"></i>
+              </th>
+              <th class="sortable" onclick="sortBy('wordCount')">
+                字数 <i class="bi bi-chevron-expand sort-icon"></i>
+              </th>
+              <th class="sortable" onclick="sortBy('typoCount')">
+                错别字数 <i class="bi bi-chevron-expand sort-icon"></i>
+              </th>
+              <th>段落数</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="studentTableBody">
+            <tr>
+              <td colspan="8" class="loading-spinner">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">加载中...</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 分页 -->
+      <nav aria-label="学生列表分页">
+        <ul class="pagination pagination-custom" id="pagination">
+        </ul>
+      </nav>
+    </div>
+
+    <!-- 黑名单区域 -->
+    <div class="card-custom" id="blacklistCard" style="display: none;">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">
+          <i class="bi bi-slash-circle text-danger me-2"></i>踢出记录
+        </h5>
+        <span class="badge bg-danger" id="blacklistCount">0</span>
+      </div>
+      <div id="blacklistContent">
+        <!-- 黑名单列表 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 作业详情抽屉 -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="drawer-panel" id="drawerPanel">
+    <div class="drawer-header">
+      <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>作业详情</h5>
+      <button type="button" class="btn-close" onclick="closeDrawer()"></button>
+    </div>
+    <div class="drawer-body" id="drawerBody"></div>
+    <div class="p-3 border-top" id="drawerFooter" style="display:none;">
+      <div class="d-flex gap-2" id="drawerActions"></div>
+    </div>
+  </div>
+
+  <!-- 布置作业模态框 -->
+  <div class="modal fade" id="assignWorkModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-plus-circle me-2"></i>布置新作业
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="assignWorkForm">
+            <div class="mb-3">
+              <label class="form-label">作业标题 <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="assignmentTitle" required placeholder="例如：写一篇关于春天的作文">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">班级</label>
+              <input type="text" class="form-control" id="assignmentClass" readonly>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">选择学生</label>
+              <div class="mb-2">
+                <input type="text" class="form-control" id="studentSearch" placeholder="搜索学生...">
+              </div>
+              <div class="border rounded p-2" style="max-height: 200px; overflow-y: auto;" id="studentCheckboxes">
+                <!-- 学生复选框将动态生成 -->
+              </div>
+              <div class="mt-2">
+                <small class="text-muted">
+                  已选择: <span id="selectedCount">0</span> 名学生
+                </small>
+                <button type="button" class="btn btn-link btn-sm p-0 ms-2" onclick="selectAllStudents()">全选</button>
+                <button type="button" class="btn btn-link btn-sm p-0 ms-1" onclick="deselectAllStudents()">取消全选</button>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">截止日期</label>
+              <input type="date" class="form-control" id="assignmentDeadline">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">作业描述</label>
+              <textarea class="form-control" id="assignmentDescription" rows="3" placeholder="作业要求和说明..."></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+          <button type="button" class="btn btn-primary" onclick="submitAssignment()">
+            <i class="bi bi-check-circle me-1"></i>发布作业
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 踢出学生模态框 -->
+  <div class="modal fade" id="kickModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-exclamation-triangle text-danger me-2"></i>踢出学生
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>确定要将 <strong id="kickStudentName"></strong> 从本班级移出吗？</p>
+          <p class="text-muted small">移出后，该学生将不会在本班级中显示。如需重新加入，需要学生主动申请。</p>
+          <div class="mb-3">
+            <label class="form-label">踢出原因（可选）</label>
+            <textarea class="form-control" id="kickReason" rows="2" placeholder="填写踢出原因..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+          <button type="button" class="btn btn-danger" onclick="confirmKick()">
+            <i class="bi bi-x-circle me-1"></i>确认踢出
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/auth-utils.js"></script>
+  <script>
+    // 全局变量
+    let classId = null;
+    let currentPage = 1;
+    let totalPages = 1;
+    let currentStatus = '';
+    let currentSort = '';
+    let currentOrder = 'asc';
+    let allStudents = [];
+
+    const API_BASE = 'http://localhost:3003/api';
+
+    // 获取URL参数
+    function getClassId() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('classId');
+    }
+
+    // 初始化页面
+    document.addEventListener('DOMContentLoaded', function() {
+      // 检查登录状态
+      if (!authUtils.checkAuth() || !authUtils.checkRole('teacher')) {
+        window.location.href = 'teacher-login.html';
+        return;
+      }
+
+      classId = getClassId();
+      if (!classId) {
+        alert('未指定班级ID');
+        window.location.href = 'teacher-dashboard.html';
+        return;
+      }
+
+      loadClassDetail();
+      loadStudents();
+      loadBlacklist();
+      loadAssignments();
+
+      // 学生搜索
+      document.getElementById('studentSearch').addEventListener('input', function(e) {
+        filterStudents(e.target.value);
+      });
+    });
+
+    // 加载班级详情
+    async function loadClassDetail() {
+      try {
+        const response = await fetch(`${API_BASE}/classes/${classId}`);
+        const result = await response.json();
+
+        if (result.success) {
+          const data = result.data;
+          document.getElementById('className').textContent = data.name;
+          document.getElementById('gradeValue').textContent = data.grade || '-';
+          document.getElementById('studentCount').textContent = data.studentCount || 0;
+          document.getElementById('studentCountBadge').textContent = data.studentCount || 0;
+          document.getElementById('avgScore').textContent = data.avgScore || '-';
+          document.getElementById('totalEssays').textContent = data.totalEssays || 0;
+          document.getElementById('pendingCount').textContent = data.pendingCount || 0;
+          document.getElementById('assignmentClass').value = data.name;
+        }
+      } catch (error) {
+        console.error('加载班级详情失败:', error);
+        showToast('加载班级详情失败', 'error');
+      }
+    }
+
+    // 加载学生列表
+    async function loadStudents() {
+      try {
+        const params = new URLSearchParams({
+          page: currentPage,
+          limit: 20,
+          status: currentStatus,
+          sortBy: currentSort,
+          sortOrder: currentOrder
+        });
+
+        const response = await fetch(`${API_BASE}/classes/${classId}/students?${params}`);
+        const result = await response.json();
+
+        if (result.success) {
+          allStudents = result.data.students || [];
+          totalPages = result.data.totalPages || 1;
+          renderStudentTable(allStudents);
+          renderPagination(result.data.page, result.data.totalPages, result.data.total);
+        }
+      } catch (error) {
+        console.error('加载学生列表失败:', error);
+        showToast('加载学生列表失败', 'error');
+      }
+    }
+
+    // 渲染学生表格
+    function renderStudentTable(students) {
+      const tbody = document.getElementById('studentTableBody');
+
+      if (students.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="text-center text-muted py-4">
+              <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.3;"></i>
+              <p class="mt-2">暂无学生数据</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = students.map(s => `
+        <tr>
+          <td><strong>${s.realName || s.username}</strong></td>
+          <td>${s.latestEssay?.title || '-'}</td>
+          <td>
+            ${s.score !== null ? `
+              <span class="fw-bold ${s.score >= 90 ? 'text-success' : s.score >= 60 ? 'text-primary' : 'text-danger'}">${s.score}</span>
+              ${s.isTeacherGraded ? '<span class="teacher-badge">师改</span>' : ''}
+            ` : '-'}
+          </td>
+          <td>${s.latestEssay?.wordCount || '-'}</td>
+          <td>${s.typoCount || 0}</td>
+          <td>${s.latestEssay?.paragraphCount || '-'}</td>
+          <td>
+            <span class="status-dot status-${s.status}"></span>
+            ${getStatusText(s.status)}
+          </td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary btn-action me-1" onclick="viewStudent(${s.id})">
+              <i class="bi bi-eye"></i> 详情
+            </button>
+            ${s.status === 'pending' ? `
+              <button class="btn btn-sm btn-primary btn-action me-1" onclick="gradeEssay(${s.latestEssay?.id})">
+                <i class="bi bi-pencil"></i> 批改
+              </button>
+            ` : ''}
+            <button class="btn btn-sm btn-outline-danger btn-action" onclick="showKickModal(${s.id}, '${s.realName || s.username}')">
+              <i class="bi bi-x-circle"></i> 踢出
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // 获取状态文本
+    function getStatusText(status) {
+      const statusMap = {
+        'completed': '已完成',
+        'pending': '待批改',
+        'needs_revision': '需修改',
+        'no_essay': '无作文'
+      };
+      return statusMap[status] || status;
+    }
+
+    // 渲染分页
+    function renderPagination(page, totalPages, total) {
+      const pagination = document.getElementById('pagination');
+
+      if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+      }
+
+      let html = '';
+
+      // 上一页
+      html += `
+        <li class="page-item ${page === 1 ? 'disabled' : ''}">
+          <a class="page-link" href="#" onclick="goToPage(${page - 1})">&laquo;</a>
+        </li>
+      `;
+
+      // 页码
+      for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= page - 2 && i <= page + 2)) {
+          html += `
+            <li class="page-item ${i === page ? 'active' : ''}">
+              <a class="page-link" href="#" onclick="goToPage(${i})">${i}</a>
+            </li>
+          `;
+        } else if (i === page - 3 || i === page + 3) {
+          html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+      }
+
+      // 下一页
+      html += `
+        <li class="page-item ${page === totalPages ? 'disabled' : ''}">
+          <a class="page-link" href="#" onclick="goToPage(${page + 1})">&raquo;</a>
+        </li>
+      `;
+
+      pagination.innerHTML = html;
+    }
+
+    // 翻页
+    function goToPage(page) {
+      if (page < 1 || page > totalPages) return;
+      currentPage = page;
+      loadStudents();
+    }
+
+    // 筛选状态
+    function filterByStatus(status) {
+      currentStatus = status;
+      currentPage = 1;
+
+      // 更新按钮样式
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      loadStudents();
+    }
+
+    // 排序
+    function sortBy(field) {
+      if (currentSort === field) {
+        currentOrder = currentOrder === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSort = field;
+        currentOrder = 'asc';
+      }
+      loadStudents();
+    }
+
+    // 查看学生详情
+    function viewStudent(studentId) {
+      window.location.href = `student-detail.html?studentId=${studentId}`;
+    }
+
+    // 批改作文
+    function gradeEssay(essayId) {
+      if (essayId) {
+        window.location.href = `grade-essay.html?id=${essayId}`;
+      }
+    }
+
+    // 显示布置作业模态框
+    function showAssignWorkModal() {
+      const modal = new bootstrap.Modal(document.getElementById('assignWorkModal'));
+      modal.show();
+
+      // 加载学生列表到复选框
+      renderStudentCheckboxes();
+    }
+
+    // 渲染学生复选框
+    function renderStudentCheckboxes() {
+      const container = document.getElementById('studentCheckboxes');
+
+      container.innerHTML = allStudents.map(s => `
+        <div class="form-check">
+          <input class="form-check-input student-checkbox" type="checkbox" value="${s.id}" id="student_${s.id}">
+          <label class="form-check-label" for="student_${s.id}">${s.realName || s.username}</label>
+        </div>
+      `).join('');
+
+      // 绑定选择事件
+      container.querySelectorAll('.student-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedCount);
+      });
+    }
+
+    // 更新已选数量
+    function updateSelectedCount() {
+      const checked = document.querySelectorAll('.student-checkbox:checked').length;
+      document.getElementById('selectedCount').textContent = checked;
+    }
+
+    // 全选学生
+    function selectAllStudents() {
+      document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = true);
+      updateSelectedCount();
+    }
+
+    // 取消全选
+    function deselectAllStudents() {
+      document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = false);
+      updateSelectedCount();
+    }
+
+    // 搜索学生
+    function filterStudents(keyword) {
+      const container = document.getElementById('studentCheckboxes');
+      const checkboxes = container.querySelectorAll('.form-check');
+
+      checkboxes.forEach(cb => {
+        const label = cb.querySelector('label').textContent.toLowerCase();
+        cb.style.display = label.includes(keyword.toLowerCase()) ? '' : 'none';
+      });
+    }
+
+    // 提交作业
+    async function submitAssignment() {
+      const title = document.getElementById('assignmentTitle').value.trim();
+      if (!title) {
+        showToast('请填写作业标题', 'warning');
+        return;
+      }
+
+      const selectedStudents = Array.from(document.querySelectorAll('.student-checkbox:checked'))
+        .map(cb => parseInt(cb.value));
+
+      const deadline = document.getElementById('assignmentDeadline').value;
+      const description = document.getElementById('assignmentDescription').value.trim();
+
+      try {
+        const response = await fetch(`${API_BASE}/classes/assignments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            grade: document.getElementById('gradeValue').textContent,
+            class_name: document.getElementById('className').textContent,
+            deadline: deadline || null,
+            description,
+            studentIds: selectedStudents
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showToast('作业发布成功！', 'success');
+          bootstrap.Modal.getInstance(document.getElementById('assignWorkModal')).hide();
+
+          // 重置表单
+          document.getElementById('assignWorkForm').reset();
+          document.getElementById('assignmentClass').value = document.getElementById('className').textContent;
+        } else {
+          showToast(result.error || '发布失败', 'error');
+        }
+      } catch (error) {
+        console.error('发布作业失败:', error);
+        showToast('网络错误，请重试', 'error');
+      }
+    }
+
+    // 显示提示
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : type === 'warning' ? 'warning' : 'info'} position-fixed`;
+      toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 250px; animation: fadein 0.3s;';
+      toast.innerHTML = `<i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info-circle'} me-2"></i>${message}`;
+
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.animation = 'fadeout 0.3s';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // 踢出相关变量
+    let currentKickStudentId = null;
+
+    // 显示踢出模态框
+    function showKickModal(studentId, studentName) {
+      currentKickStudentId = studentId;
+      document.getElementById('kickStudentName').textContent = studentName;
+      document.getElementById('kickReason').value = '';
+      const modal = new bootstrap.Modal(document.getElementById('kickModal'));
+      modal.show();
+    }
+
+    // 确认踢出
+    async function confirmKick() {
+      if (!currentKickStudentId) return;
+
+      const reason = document.getElementById('kickReason').value.trim();
+
+      try {
+        const response = await fetch(`${API_BASE}/classes/${classId}/students/${currentKickStudentId}/kick`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showToast('已将该学生移出班级', 'success');
+          bootstrap.Modal.getInstance(document.getElementById('kickModal')).hide();
+          loadStudents();
+          loadBlacklist();
+          loadClassDetail();
+        } else {
+          showToast(result.error || '操作失败', 'error');
+        }
+      } catch (error) {
+        console.error('踢出学生失败:', error);
+        showToast('网络错误，请重试', 'error');
+      }
+    }
+
+    // 加载黑名单
+    async function loadBlacklist() {
+      try {
+        const response = await fetch(`${API_BASE}/classes/${classId}/blacklist`);
+        const result = await response.json();
+
+        if (result.success) {
+          const list = result.data || [];
+          const blacklistCard = document.getElementById('blacklistCard');
+          const blacklistContent = document.getElementById('blacklistContent');
+          const blacklistCount = document.getElementById('blacklistCount');
+
+          if (list.length > 0) {
+            blacklistCard.style.display = 'block';
+            blacklistCount.textContent = list.length;
+            blacklistContent.innerHTML = list.map(b => `
+              <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div>
+                  <strong>${b.studentName}</strong>
+                  <small class="text-muted ms-2">${b.reason || '无原因'}</small>
+                  <br>
+                  <small class="text-muted">移出时间：${new Date(b.createdAt).toLocaleString()}</small>
+                </div>
+                <button class="btn btn-sm btn-success" onclick="approveStudent(${b.studentId})">
+                  <i class="bi bi-check-circle me-1"></i>批准重新加入
+                </button>
+              </div>
+            `).join('');
+          } else {
+            blacklistCard.style.display = 'none';
+          }
+        }
+      } catch (error) {
+        console.error('加载黑名单失败:', error);
+      }
+    }
+
+    // 批准学生重新加入
+    async function approveStudent(studentId) {
+      if (!confirm('确定要批准该学生重新加入班级吗？')) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/classes/${classId}/students/${studentId}/approve`, {
+          method: 'POST'
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showToast('已批准该学生重新加入班级', 'success');
+          loadBlacklist();
+          loadStudents();
+          loadClassDetail();
+        } else {
+          showToast(result.error || '操作失败', 'error');
+        }
+      } catch (error) {
+        console.error('批准失败:', error);
+        showToast('网络错误，请重试', 'error');
+      }
+    }
+
+    // ========== 已布置作业列表 ==========
+
+    let currentAssignment = null;
+
+    // 跳转到布置新作业页面
+    function goToNewAssignment() {
+      window.location.href = `assign-work.html?classId=${classId}`;
+    }
+
+    // 返回班级列表
+    function goBackToClassList() {
+      window.location.href = 'teacher-dashboard.html#classes';
+    }
+
+    // 加载作业列表
+    async function loadAssignments() {
+      try {
+        const response = await fetch(`${API_BASE}/classes/${classId}/assignments`, {
+          credentials: 'include'
+        });
+        const result = await response.json();
+        const listEl = document.getElementById('assignmentsList');
+        const emptyEl = document.getElementById('assignmentsEmpty');
+        const countEl = document.getElementById('assignmentCount');
+
+        if (!result.success || result.data.length === 0) {
+          listEl.innerHTML = '';
+          emptyEl.style.display = '';
+          countEl.textContent = '0';
+          return;
+        }
+
+        emptyEl.style.display = 'none';
+        countEl.textContent = result.data.length;
+        listEl.innerHTML = `
+          <div class="table-responsive">
+            <table class="table table-custom">
+              <thead>
+                <tr>
+                  <th>序号</th>
+                  <th>作业标题</th>
+                  <th>布置时间</th>
+                  <th>截止时间</th>
+                  <th>提交进度</th>
+                  <th>平均分</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${result.data.map((a, i) => renderAssignmentRow(a, i)).join('')}
+              </tbody>
+            </table>
+          </div>`;
+      } catch (error) {
+        console.error('加载作业列表失败:', error);
+        showToast('加载作业列表失败', 'error');
+      }
+    }
+
+    // 渲染单行作业
+    function renderAssignmentRow(a, i) {
+      const progressBar = renderProgressBar(a.progress);
+      const avgDisplay = a.avgScore !== null ? a.avgScore.toFixed(1) : '—';
+      const deadlineClass = isDeadlinePassed(a.deadline) ? 'text-danger' : '';
+      const deadlineDisplay = a.deadline ? formatDate(a.deadline) : '未设置';
+
+      // 检查是否可以编辑（未截止且无批改）
+      const canEdit = !isDeadlinePassed(a.deadline);
+
+      return `
+        <tr>
+          <td>${i + 1}</td>
+          <td>
+            <a href="javascript:void(0)" onclick="viewAssignmentDetail(${a.id})" class="text-decoration-none fw-bold">
+              ${escapeHtml(a.title)}
+            </a>
+          </td>
+          <td>${formatDate(a.created_at)}</td>
+          <td class="${deadlineClass}">${deadlineDisplay}</td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <span class="progress-text-bar">${progressBar}</span>
+              <span class="small text-muted">${a.submitted}/${a.totalStudents} (${a.progress}%)</span>
+            </div>
+          </td>
+          <td class="fw-bold">${avgDisplay}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary btn-action me-1" onclick="goToGrading(${a.id})">
+              <i class="bi bi-pencil-square"></i> 查看批改
+            </button>
+            ${canEdit ? `
+              <button class="btn btn-sm btn-outline-secondary btn-action me-1" onclick="editAssignment(${a.id})">
+                <i class="bi bi-pencil"></i> 编辑
+              </button>
+            ` : ''}
+            <button class="btn btn-sm btn-outline-danger btn-action" onclick="deleteAssignment(${a.id}, ${a.submitted})">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>`;
+    }
+
+    // 渲染进度条（文本）
+    function renderProgressBar(percent) {
+      const filled = Math.round(percent / 10);
+      const empty = 10 - filled;
+      return '<span class="text-success">█</span>'.repeat(filled) + '<span style="color:#ddd">░</span>'.repeat(empty);
+    }
+
+    // 判断截止时间是否已过
+    function isDeadlinePassed(deadline) {
+      if (!deadline) return false;
+      return new Date(deadline) < new Date();
+    }
+
+    // 格式化日期
+    function formatDate(dateStr) {
+      if (!dateStr) return '—';
+      const d = new Date(dateStr);
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    // HTML转义
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // 查看作业详情
+    async function viewAssignmentDetail(assignmentId) {
+      try {
+        const response = await fetch(`${API_BASE}/classes/${classId}/assignments`, {
+          credentials: 'include'
+        });
+        const result = await response.json();
+        const a = result.data.find(x => x.id === assignmentId);
+        if (!a) { showToast('作业不存在', 'error'); return; }
+        currentAssignment = a;
+
+        const body = document.getElementById('drawerBody');
+        body.innerHTML = `
+          <h4 class="mb-3">${escapeHtml(a.title)}</h4>
+          <div class="assignment-detail-meta">
+            <span class="detail-tag"><i class="bi bi-calendar3 me-1"></i>布置：${formatDate(a.created_at)}</span>
+            <span class="detail-tag"><i class="bi bi-clock me-1"></i>截止：${a.deadline ? formatDate(a.deadline) : '未设置'}</span>
+            <span class="detail-tag"><i class="bi bi-people me-1"></i>${a.submitted}/${a.totalStudents}人提交</span>
+          </div>
+          <div class="drawer-section">
+            <div class="drawer-section-title"><i class="bi bi-list-check me-1"></i>写作要点</div>
+            <div style="white-space:pre-wrap;line-height:1.8;">${a.description ? escapeHtml(a.description).replace(/\n/g,'<br>') : '<span class="text-muted">未填写</span>'}</div>
+          </div>
+        `;
+
+        const footer = document.getElementById('drawerFooter');
+        const actions = document.getElementById('drawerActions');
+        const canEdit = !isDeadlinePassed(a.deadline);
+        actions.innerHTML = `
+          <button class="btn btn-primary" onclick="goToGrading(${a.id})">
+            <i class="bi bi-pencil-square me-1"></i>查看批改
+          </button>
+          ${canEdit ? `
+            <button class="btn btn-outline-secondary" onclick="editAssignment(${a.id})">
+              <i class="bi bi-pencil me-1"></i>编辑作业
+            </button>
+          ` : ''}
+          <button class="btn btn-outline-danger" onclick="deleteAssignment(${a.id}, ${a.submitted})">
+            <i class="bi bi-trash me-1"></i>删除
+          </button>`;
+        footer.style.display = '';
+
+        openDrawer();
+      } catch (error) {
+        console.error('加载作业详情失败:', error);
+        showToast('加载作业详情失败', 'error');
+      }
+    }
+
+    // 去批改页面
+    function goToGrading(assignmentId) {
+      // 跳转到作文批改tab并传递assignmentId参数
+      window.location.href = `teacher-dashboard.html?grading=${assignmentId}`;
+    }
+
+    // 编辑作业
+    function editAssignment(assignmentId) {
+      // 将作业数据存入sessionStorage，跳转到布置页面填充
+      if (currentAssignment) {
+        sessionStorage.setItem('editingAssignment', JSON.stringify(currentAssignment));
+      }
+      window.location.href = `assign-work.html?classId=${classId}&editId=${assignmentId}`;
+    }
+
+    // 删除作业
+    async function deleteAssignment(assignmentId, submittedCount) {
+      const hasSubmissions = submittedCount > 0;
+      let confirmMsg = `确定要删除此作业吗？`;
+      if (hasSubmissions) {
+        confirmMsg = `删除将同时删除所有学生提交的作文（${submittedCount}篇），不可恢复！\n\n确定要继续吗？`;
+      }
+      if (!confirm(confirmMsg)) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/classes/${classId}/assignments/${assignmentId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        const result = await response.json();
+        if (result.success) {
+          showToast('作业已删除', 'success');
+          closeDrawer();
+          loadAssignments();
+        } else {
+          showToast(result.error || '删除失败', 'error');
+        }
+      } catch (error) {
+        console.error('删除作业失败:', error);
+        showToast('网络错误，请重试', 'error');
+      }
+    }
+
+    // 抽屉控制
+    function openDrawer() {
+      document.getElementById('drawerPanel').classList.add('open');
+      document.getElementById('drawerOverlay').classList.add('open');
+    }
+    function closeDrawer() {
+      document.getElementById('drawerPanel').classList.remove('open');
+      document.getElementById('drawerOverlay').classList.remove('open');
+    }
+
+    // ========== 学生名单折叠 ==========
+
+    let studentsExpanded = true;
+    function toggleStudents() {
+      studentsExpanded = !studentsExpanded;
+      const section = document.getElementById('studentListSection');
+      const btn = document.getElementById('toggleStudentsBtn');
+      if (studentsExpanded) {
+        section.style.display = '';
+        btn.innerHTML = '<i class="bi bi-chevron-up me-1"></i>收起学生名单';
+      } else {
+        section.style.display = 'none';
+        btn.innerHTML = '<i class="bi bi-chevron-down me-1"></i>展开学生名单';
+      }
+    }
+  </script>
+  <style>
+    @keyframes fadein { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
+  </style>
+</body>
+</html>

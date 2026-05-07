@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI自动评分 - 作文打分引擎</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 16px 16px 0 0 !important;
+            padding: 20px;
+        }
+        .dimension-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-left: 4px solid #667eea;
+        }
+        .dimension-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+        .dimension-card.content { border-left-color: #667eea; }
+        .dimension-card.structure { border-left-color: #28a745; }
+        .dimension-card.language { border-left-color: #ffc107; }
+        .dimension-card.creativity { border-left-color: #17a2b8; }
+
+        .dimension-score {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .dimension-bar {
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .dimension-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .total-score-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+        }
+        .total-score {
+            font-size: 5rem;
+            font-weight: bold;
+        }
+        .grade-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .grade-excellent { background: #d4edda; color: #155724; }
+        .grade-good { background: #cce5ff; color: #004085; }
+        .grade-average { background: #fff3cd; color: #856404; }
+        .grade-poor { background: #f8d7da; color: #721c24; }
+
+        .auto-grade-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+        }
+        .auto-grade-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+            color: white;
+        }
+        .auto-grade-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .feedback-panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .feedback-item {
+            padding: 10px 15px;
+            border-left: 3px solid #667eea;
+            background: white;
+            margin-bottom: 8px;
+            border-radius: 0 5px 5px 0;
+        }
+        .feedback-item.warning {
+            border-left-color: #ffc107;
+        }
+        .feedback-item.success {
+            border-left-color: #28a745;
+        }
+        .feedback-item.info {
+            border-left-color: #17a2b8;
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stats-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .essay-input {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 200px;
+        }
+        .essay-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .result-section {
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="text-center mb-4">
+            <h1 class="text-white"><i class="bi bi-robot me-2"></i>作文自动打分引擎</h1>
+            <p class="text-white-50">基于规则引擎的智能评分系统，支持1-6年级差异化评分</p>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i>输入作文</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">作文内容</label>
+                            <div class="essay-input" id="essayInput" contenteditable="true"
+                                 placeholder="请输入或粘贴作文内容..."></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">年级</label>
+                            <select class="form-select" id="gradeSelect">
+                                <option value="1">一年级</option>
+                                <option value="2">二年级</option>
+                                <option value="3" selected>三年级</option>
+                                <option value="4">四年级</option>
+                                <option value="5">五年级</option>
+                                <option value="6">六年级</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">作文主题（可选）</label>
+                            <input type="text" class="form-control" id="topicInput"
+                                   placeholder="例如：记一件有意义的事">
+                        </div>
+                        <button class="btn auto-grade-btn w-100" id="gradeBtn" onclick="performAutoGrade()">
+                            <i class="bi bi-stars me-2"></i>开始评分
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 评分结果区域 -->
+        <div class="card mt-4 result-section" id="resultSection" style="display: none;">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-clipboard-check me-2"></i>评分结果</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="row">
+                    <!-- 总分展示 -->
+                    <div class="col-md-4">
+                        <div class="total-score-display">
+                            <h5 class="mb-3">总分</h5>
+                            <div class="total-score" id="totalScore">--</div>
+                            <div class="mt-3">
+                                <span class="grade-badge grade-good" id="gradeBadge">待评分</span>
+                            </div>
+                            <p class="mt-3 mb-0 opacity-75" id="gradeLevel">适合年级：--</p>
+                        </div>
+
+                        <!-- 统计信息 -->
+                        <div class="mt-3">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="stats-card">
+                                        <div class="stats-number" id="wordCount">--</div>
+                                        <div class="small text-muted">字数</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stats-card">
+                                        <div class="stats-number" id="sentenceCount">--</div>
+                                        <div class="small text-muted">句子</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stats-card">
+                                        <div class="stats-number" id="paragraphCount">--</div>
+                                        <div class="small text-muted">段落</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stats-card">
+                                        <div class="stats-number" id="uniqueRatio">--</div>
+                                        <div class="small text-muted">词汇丰富度</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 四维度得分 -->
+                    <div class="col-md-8">
+                        <div class="row">
+                            <!-- 内容维度 -->
+                            <div class="col-md-6">
+                                <div class="dimension-card content">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">
+                                            <i class="bi bi-card-text me-2"></i>内容
+                                        </h5>
+                                        <span class="dimension-score" id="contentScore">--</span>
+                                    </div>
+                                    <div class="text-muted small mt-2">主题明确，内容充实</div>
+                                    <div class="dimension-bar">
+                                        <div class="dimension-bar-fill bg-primary" id="contentBar" style="width: 0%"></div>
+                                    </div>
+                                    <div class="mt-2 small text-muted" id="contentBreakdown"></div>
+                                </div>
+                            </div>
+
+                            <!-- 结构维度 -->
+                            <div class="col-md-6">
+                                <div class="dimension-card structure">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">
+                                            <i class="bi bi-diagram-3 me-2"></i>结构
+                                        </h5>
+                                        <span class="dimension-score" id="structureScore">--</span>
+                                    </div>
+                                    <div class="text-muted small mt-2">条理清晰，层次分明</div>
+                                    <div class="dimension-bar">
+                                        <div class="dimension-bar-fill bg-success" id="structureBar" style="width: 0%"></div>
+                                    </div>
+                                    <div class="mt-2 small text-muted" id="structureBreakdown"></div>
+                                </div>
+                            </div>
+
+                            <!-- 语言维度 -->
+                            <div class="col-md-6">
+                                <div class="dimension-card language">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">
+                                            <i class="bi bi-chat-quote me-2"></i>语言
+                                        </h5>
+                                        <span class="dimension-score" id="languageScore">--</span>
+                                    </div>
+                                    <div class="text-muted small mt-2">语句通顺，用词准确</div>
+                                    <div class="dimension-bar">
+                                        <div class="dimension-bar-fill bg-warning" id="languageBar" style="width: 0%"></div>
+                                    </div>
+                                    <div class="mt-2 small text-muted" id="languageBreakdown"></div>
+                                </div>
+                            </div>
+
+                            <!-- 创意维度 -->
+                            <div class="col-md-6">
+                                <div class="dimension-card creativity">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">
+                                            <i class="bi bi-lightbulb me-2"></i>创意
+                                        </h5>
+                                        <span class="dimension-score" id="creativityScore">--</span>
+                                    </div>
+                                    <div class="text-muted small mt-2">想象丰富，表达新颖</div>
+                                    <div class="dimension-bar">
+                                        <div class="dimension-bar-fill bg-info" id="creativityBar" style="width: 0%"></div>
+                                    </div>
+                                    <div class="mt-2 small text-muted" id="creativityBreakdown"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 反馈信息 -->
+                        <div class="feedback-panel" id="feedbackPanel">
+                            <h6 class="mb-3"><i class="bi bi-info-circle me-2"></i>评分反馈</h6>
+                            <div id="feedbackContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 测试示例 -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-play-circle me-2"></i>示例作文</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <button class="btn btn-outline-primary w-100" onclick="loadSample(1)">
+                            <i class="bi bi-emoji-smile me-2"></i>一年级示例
+                        </button>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <button class="btn btn-outline-success w-100" onclick="loadSample(3)">
+                            <i class="bi bi-emoji-smile me-2"></i>三年级示例
+                        </button>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <button class="btn btn-outline-info w-100" onclick="loadSample(5)">
+                            <i class="bi bi-emoji-smile me-2"></i>五年级示例
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 示例作文数据
+        const sampleEssays = {
+            1: {
+                text: "今天我去公园玩。我看见了小花，小花开得很漂亮。我还看见了小鸟，小鸟在树上唱歌。我玩得很开心！",
+                topic: "快乐的周末"
+            },
+            3: {
+                text: "上周六，阳光明媚，我和爸爸妈妈一起去公园放风筝。\n\n我们来到公园的草地上，我拿出风筝开始放。开始的时候，风筝怎么也飞不起来，我有点着急。后来爸爸教我，要迎着风跑，边跑边放线。我照着爸爸说的做，风筝果然飞起来了！\n\n风筝越飞越高，像一只小鸟在天空中飞翔。我高兴得跳了起来。这次放风筝让我明白了一个道理：做任何事情都要有耐心，要多学习别人的经验。",
+                topic: "记一件难忘的事"
+            },
+            5: {
+                text: "生活中，我们总会遇到各种各样的困难和挑战。面对这些困难，我们是选择逃避，还是勇敢地迎难而上？我认为，只有勇于面对困难，才能不断成长。\n\n记得有一次数学考试，我只得了七十几分。看着那刺眼的分数，我的心情跌到了谷底。回到家后，我把自己关在房间里，不想和任何人说话。\n\n但是，当我冷静下来后，我开始反思：这次没考好，是因为我平时不够努力，还是考试时太粗心？我决定从以下几个方面改进：首先，上课要认真听讲，不懂的问题及时问老师；其次，每天坚持做数学练习题；最后，考试时要仔细检查。\n\n经过一个月的努力，在第二次考试中，我取得了九十五分的好成绩。这次经历让我深刻地明白：困难并不可怕，可怕的是失去面对困难的勇气。只要我们勇于面对，坚持不懈，就一定能够战胜困难，收获成功。",
+                topic: "面对困难"
+            }
+        };
+
+        function loadSample(grade) {
+            const sample = sampleEssays[grade];
+            document.getElementById('essayInput').innerText = sample.text;
+            document.getElementById('gradeSelect').value = grade;
+            document.getElementById('topicInput').value = sample.topic;
+        }
+
+        async function performAutoGrade() {
+            const btn = document.getElementById('gradeBtn');
+            const essayText = document.getElementById('essayInput').innerText.trim();
+            const grade = document.getElementById('gradeSelect').value;
+            const topic = document.getElementById('topicInput').value;
+
+            if (!essayText) {
+                alert('请输入作文内容');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner me-2"></span>评分中...';
+
+            try {
+                const response = await fetch('/api/grading/auto-grade', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: essayText,
+                        grade: parseInt(grade),
+                        topic: topic
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayGradingResult(result.data);
+                } else {
+                    alert('评分失败: ' + result.error);
+                }
+            } catch (error) {
+                console.error('评分请求失败:', error);
+                alert('评分请求失败，请确保服务器已启动');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-stars me-2"></i>开始评分';
+            }
+        }
+
+        function displayGradingResult(result) {
+            const scores = result.scores;
+            const stats = result.text_stats;
+            const feedback = result.feedback;
+
+            // 显示结果区域
+            document.getElementById('resultSection').style.display = 'block';
+
+            // 更新总分
+            document.getElementById('totalScore').textContent = scores.total;
+
+            // 更新等级徽章
+            const badge = document.getElementById('gradeBadge');
+            if (scores.total >= 90) {
+                badge.textContent = '优秀';
+                badge.className = 'grade-badge grade-excellent';
+            } else if (scores.total >= 80) {
+                badge.textContent = '良好';
+                badge.className = 'grade-badge grade-good';
+            } else if (scores.total >= 60) {
+                badge.textContent = '及格';
+                badge.className = 'grade-badge grade-average';
+            } else {
+                badge.textContent = '待改进';
+                badge.className = 'grade-badge grade-poor';
+            }
+
+            // 更新年级标签
+            document.getElementById('gradeLevel').textContent = `适合年级：${result.grade}年级`;
+
+            // 更新统计信息
+            document.getElementById('wordCount').textContent = stats.word_count;
+            document.getElementById('sentenceCount').textContent = stats.sentence_count;
+            document.getElementById('paragraphCount').textContent = stats.paragraph_count;
+            document.getElementById('uniqueRatio').textContent = (stats.unique_word_ratio * 100).toFixed(0) + '%';
+
+            // 更新四维度分数
+            updateDimensionScore('content', scores.content, result.details.content, '#667eea');
+            updateDimensionScore('structure', scores.structure, result.details.structure, '#28a745');
+            updateDimensionScore('language', scores.language, result.details.language, '#ffc107');
+            updateDimensionScore('creativity', scores.creativity, result.details.creativity, '#17a2b8');
+
+            // 更新反馈面板
+            displayFeedback(feedback, result.details);
+
+            // 滚动到结果区域
+            document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function updateDimensionScore(dimension, score, details, color) {
+            const scoreEl = document.getElementById(dimension + 'Score');
+            const barEl = document.getElementById(dimension + 'Bar');
+            const breakdownEl = document.getElementById(dimension + 'Breakdown');
+
+            scoreEl.textContent = score;
+            barEl.style.width = (score / 25 * 100) + '%';
+            barEl.style.backgroundColor = color;
+
+            // 显示细分项
+            if (details && details.breakdown) {
+                const bd = details.breakdown;
+                let breakdownText = '';
+
+                if (dimension === 'content') {
+                    breakdownText = `切题:${bd.topic} | 完整:${bd.completeness} | 细节:${bd.detail}`;
+                } else if (dimension === 'structure') {
+                    breakdownText = `段落:${bd.paragraph} | 逻辑:${bd.logic}`;
+                } else if (dimension === 'language') {
+                    breakdownText = `多样:${bd.variety} | 重复:${bd.repetition}`;
+                } else if (dimension === 'creativity') {
+                    breakdownText = `独特:${bd.uniqueness} | 修辞:+${bd.rhetoric_bonus}`;
+                }
+
+                breakdownEl.textContent = breakdownText;
+            }
+        }
+
+        function displayFeedback(feedback, details) {
+            const content = document.getElementById('feedbackContent');
+            let html = '';
+
+            // 拼音作文提示
+            if (feedback.is_pinyin_essay) {
+                html += `<div class="feedback-item warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    检测到拼音作文，语言评分已适当放宽
+                </div>`;
+            }
+
+            // 跑题警告
+            if (feedback.off_topic) {
+                html += `<div class="feedback-item warning">
+                    <i class="bi bi-exclamation-circle me-2"></i>
+                    作文可能偏离主题，建议检查内容相关性
+                </div>`;
+            }
+
+            // 结构问题
+            if (feedback.structure_issues && feedback.structure_issues.length > 0) {
+                feedback.structure_issues.forEach(issue => {
+                    html += `<div class="feedback-item info">
+                        <i class="bi bi-diagram-3 me-2"></i>
+                        ${issue}
+                    </div>`;
+                });
+            }
+
+            // 语法问题
+            if (feedback.grammar_issues && feedback.grammar_issues.length > 0) {
+                feedback.grammar_issues.slice(0, 3).forEach(issue => {
+                    html += `<div class="feedback-item info">
+                        <i class="bi bi-text-left me-2"></i>
+                        ${issue.description || issue.type}
+                    </div>`;
+                });
+            }
+
+            // 创意亮点
+            if (feedback.creativity_highlights && feedback.creativity_highlights.length > 0) {
+                feedback.creativity_highlights.forEach(highlight => {
+                    html += `<div class="feedback-item success">
+                        <i class="bi bi-lightbulb me-2"></i>
+                        ${highlight}
+                    </div>`;
+                });
+            }
+
+            if (!html) {
+                html = '<div class="text-muted">暂无特别反馈</div>';
+            }
+
+            content.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>测试入口 - 小学生作文智能批改背诵平台</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .test-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    .test-card {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    .page-title {
+      font-size: 2.5rem;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .page-subtitle {
+      color: #666;
+      font-size: 1.1rem;
+      margin-bottom: 40px;
+    }
+    .test-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 40px;
+    }
+    .test-item {
+      background: #f8f9fa;
+      border-radius: 15px;
+      padding: 25px;
+      text-decoration: none;
+      color: #333;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+    .test-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      border-color: #667eea;
+      text-decoration: none;
+      color: #333;
+    }
+    .test-icon {
+      font-size: 3rem;
+      color: #667eea;
+      margin-bottom: 15px;
+      display: block;
+    }
+    .test-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .test-desc {
+      color: #666;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    .status-ready {
+      background: #d4edda;
+      color: #155724;
+    }
+    .status-beta {
+      background: #fff3cd;
+      color: #856404;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 50px;
+      color: rgba(255,255,255,0.8);
+    }
+    @media (max-width: 768px) {
+      .test-container {
+        padding: 20px;
+      }
+      .test-card {
+        padding: 25px;
+      }
+      .page-title {
+        font-size: 2rem;
+      }
+      .test-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <!-- 欢迎卡片 -->
+    <div class="test-card">
+      <h1 class="page-title">
+        <i class="bi bi-mortarboard-fill text-primary me-3"></i>
+        小学生作文智能批改背诵平台
+      </h1>
+      <p class="page-subtitle">
+        测试入口 - 从这里开始测试所有功能
+      </p>
+
+      <!-- 系统状态 -->
+      <div class="mb-4">
+        <h5>系统状态</h5>
+        <div class="row mt-3">
+          <div class="col-md-3">
+            <span class="status-badge status-ready">✅ 登录功能</span>
+          </div>
+          <div class="col-md-3">
+            <span class="status-badge status-ready">✅ 注册功能</span>
+          </div>
+          <div class="col-md-3">
+            <span class="status-badge status-beta">🔄 多图上传</span>
+          </div>
+          <div class="col-md-3">
+            <span class="status-badge status-beta">🔄 OCR识别</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 测试入口网格 -->
+    <div class="test-grid">
+      <!-- 登录测试 -->
+      <a href="index.html" class="test-item">
+        <i class="bi bi-box-arrow-in-right test-icon"></i>
+        <div class="test-title">主登录页面</div>
+        <div class="test-desc">
+          测试家长和教师角色登录功能，验证认证流程
+        </div>
+        <span class="status-badge status-ready">登录功能</span>
+      </a>
+
+      <!-- 注册测试 -->
+      <a href="register.html" class="test-item">
+        <i class="bi bi-person-plus test-icon"></i>
+        <div class="test-title">注册页面</div>
+        <div class="test-desc">
+          测试家长和教师用户注册，包括表单验证和API调用
+        </div>
+        <span class="status-badge status-ready">注册功能</span>
+      </a>
+
+      <!-- 多图上传测试 -->
+      <a href="test-multi-upload.html" class="test-item">
+        <i class="bi bi-camera-fill test-icon"></i>
+        <div class="test-title">多图上传测试</div>
+        <div class="test-desc">
+          独立测试多图上传功能，包括拖拽、预览、删除等
+        </div>
+        <span class="status-badge status-beta">核心功能</span>
+      </a>
+
+      <!-- 作文提交测试 -->
+      <a href="submit-essay-with-images.html" class="test-item">
+        <i class="bi bi-pencil-square test-icon"></i>
+        <div class="test-title">作文提交页面</div>
+        <div class="test-desc">
+          测试完整的作文提交流程，包括图片上传和OCR识别
+        </div>
+        <span class="status-badge status-beta">完整流程</span>
+      </a>
+
+      <!-- 作文批改测试 -->
+      <a href="grade-essay.html" class="test-item">
+        <i class="bi bi-clipboard-check test-icon"></i>
+        <div class="test-title">作文批改页面</div>
+        <div class="test-desc">
+          测试教师批改功能，包括评分、评语等
+        </div>
+        <span class="status-badge status-beta">教师功能</span>
+      </a>
+
+      <!-- API测试工具 -->
+      <a href="test-registration.html" class="test-item">
+        <i class="bi bi-gear-connected test-icon"></i>
+        <div class="test-title">API测试工具</div>
+        <div class="test-desc">
+          测试后端API接口，包括注册、登录等服务状态
+        </div>
+        <span class="status-badge status-ready">调试工具</span>
+      </a>
+    </div>
+
+    <!-- 使用说明 -->
+    <div class="test-card">
+      <h4><i class="bi bi-info-circle me-2 text-primary"></i>测试说明</h4>
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <h5>🔐 用户认证测试</h5>
+          <p class="text-muted">
+            1. 先访问 <strong>主登录页面</strong> 测试登录功能<br>
+            2. 如果没有账号，访问 <strong>注册页面</strong> 创建测试账户<br>
+            3. 支持家长和教师两种角色
+          </p>
+        </div>
+        <div class="col-md-6">
+          <h5>📸 功能测试</h5>
+          <p class="text-muted">
+            1. 访问 <strong>多图上传测试</strong> 验证上传组件<br>
+            2. 测试 <strong>作文提交页面</strong> 的完整流程<br>
+            3. 使用 <strong>API测试工具</strong> 检查后端服务
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 快速开始 -->
+    <div class="test-card">
+      <h4><i class="bi fa-rocket me-2 text-primary"></i>快速测试步骤</h4>
+      <ol class="text-start">
+        <li><strong>第1步：</strong>打开 <a href="test-registration.html" target="_blank">API测试工具</strong>，确保后端服务运行正常</li>
+        <li><strong>第2步：</strong>如果没有测试账号，访问 <a href="register.html" target="_blank">注册页面</a> 创建一个家长或教师账号</li>
+        <li><strong>第3步：</strong>访问 <a href="test-multi-upload.html" target="_blank">多图上传测试</a>，验证上传功能</li>
+        <li><strong>第4步：</strong>根据角色访问对应页面测试完整功能</li>
+      </ol>
+    </div>
+
+    <div class="footer">
+      <p class="mb-0">
+        <i class="bi bi-code-slash me-2"></i>
+        测试环境 - 数据不会保存
+      </p>
+      <p class="mb-0 mt-2">
+        服务器地址: <code>http://localhost:3003</code>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // 检查服务器状态
+    async function checkServerStatus() {
+      const statusDiv = document.getElementById('server-status');
+      if (!statusDiv) return;
+
+      try {
+        const response = await fetch('http://localhost:3003/', { method: 'HEAD' });
+        if (response.ok) {
+          statusDiv.innerHTML = '<span class="badge bg-success">服务器运行正常</span>';
+        } else {
+          statusDiv.innerHTML = '<span class="badge bg-warning">服务器响应异常</span>';
+        }
+      } catch (error) {
+        statusDiv.innerHTML = '<span class="badge bg-danger">服务器未启动</span>';
+      }
+    }
+
+    // 页面加载时检查服务器状态
+    document.addEventListener('DOMContentLoaded', function() {
+      checkServerStatus();
+    });
+  </script>
+</body>
+</html>

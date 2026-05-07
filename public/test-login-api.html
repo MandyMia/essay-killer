@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录API测试</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .test { background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 10px 0; }
+    .success { color: green; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h1>登录API测试</h1>
+
+  <div class="test">
+    <h3>1. 测试后端连接</h3>
+    <button onclick="testConnection()">测试连接</button>
+    <div id="connectionResult"></div>
+  </div>
+
+  <div class="test">
+    <h3>2. 测试家长登录API</h3>
+    <button onclick="testParentLogin()">测试家长登录</button>
+    <div id="parentLoginResult"></div>
+  </div>
+
+  <div class="test">
+    <h3>3. 测试教师登录API</h3>
+    <button onclick="testTeacherLogin()">测试教师登录</button>
+    <div id="teacherLoginResult"></div>
+  </div>
+
+  <div class="test">
+    <h3>4. 先注册再测试登录</h3>
+    <button onclick="registerAndLogin()">注册并测试登录</button>
+    <div id="registerLoginResult"></div>
+  </div>
+
+  <script>
+    async function testConnection() {
+      const result = document.getElementById('connectionResult');
+      try {
+        const response = await fetch('http://localhost:3003/');
+        if (response.ok) {
+          result.innerHTML = '<span class="success">✅ 后端连接正常</span>';
+        } else {
+          result.innerHTML = '<span class="error">❌ 后端响应异常</span>';
+        }
+      } catch (err) {
+        result.innerHTML = `<span class="error">❌ 无法连接: ${err.message}</span>`;
+      }
+    }
+
+    async function testParentLogin() {
+      const result = document.getElementById('parentLoginResult');
+      result.innerHTML = '测试中...';
+
+      try {
+        console.log('测试家长登录 API: http://localhost:3003/api/auth/parent/login');
+
+        const response = await fetch('http://localhost:3003/api/auth/parent/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: 'test', password: '123456' })
+        });
+
+        console.log('响应状态:', response.status);
+        const data = await response.json();
+        console.log('响应数据:', data);
+
+        if (response.ok) {
+          result.innerHTML = `<span class="success">✅ 家长登录API正常: ${data.user.id}</span>`;
+        } else {
+          result.innerHTML = `<span class="error">❌ 家长登录API返回错误: ${data.error}</span>`;
+        }
+      } catch (err) {
+        console.error('错误:', err);
+        result.innerHTML = `<span class="error">❌ 网络错误: ${err.message}</span>`;
+      }
+    }
+
+    async function testTeacherLogin() {
+      const result = document.getElementById('teacherLoginResult');
+      result.innerHTML = '测试中...';
+
+      try {
+        console.log('测试教师登录 API: http://localhost:3003/api/auth/teacher/login');
+
+        const response = await fetch('http://localhost:3003/api/auth/teacher/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: 'test', password: '123456' })
+        });
+
+        console.log('响应状态:', response.status);
+        const data = await response.json();
+        console.log('响应数据:', data);
+
+        if (response.ok) {
+          result.innerHTML = `<span class="success">✅ 教师登录API正常: ${data.user.id}</span>`;
+        } else {
+          result.innerHTML = `<span class="error">❌ 教师登录API返回错误: ${data.error}</span>`;
+        }
+      } catch (err) {
+        console.error('错误:', err);
+        result.innerHTML = `<span class="error">❌ 网络错误: ${err.message}</span>`;
+      }
+    }
+
+    async function registerAndLogin() {
+      const result = document.getElementById('registerLoginResult');
+      result.innerHTML = '注册中...';
+
+      const username = 'test' + Date.now();
+      const password = '123456';
+
+      try {
+        // 先注册
+        const registerResponse = await fetch('http://localhost:3003/api/auth/parent/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: username,
+            password: password,
+            realName: '测试用户',
+            grade: '三年级',
+            class_name: '1班'
+          })
+        });
+
+        const registerData = await registerResponse.json();
+
+        if (!registerResponse.ok) {
+          result.innerHTML = `<span class="error">❌ 注册失败: ${registerData.error}</span>`;
+          return;
+        }
+
+        // 再登录
+        result.innerHTML = '登录中...';
+
+        const loginResponse = await fetch('http://localhost:3003/api/auth/parent/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const loginData = await loginResponse.json();
+
+        if (loginResponse.ok) {
+          result.innerHTML = `<span class="success">✅ 注册和登录都成功！用户ID: ${loginData.user.id}</span>`;
+          console.log('可以使用以下账号登录:', { username, password });
+          result.innerHTML += `<br>用户名: ${username}<br>密码: ${password}`;
+        } else {
+          result.innerHTML = `<span class="error">❌ 登录失败: ${loginData.error}</span>`;
+        }
+      } catch (err) {
+        console.error('错误:', err);
+        result.innerHTML = `<span class="error">❌ 网络错误: ${err.message}</span>`;
+      }
+    }
+
+    // 自动测试连接
+    window.onload = function() {
+      testConnection();
+    };
+  </script>
+</body>
+</html>

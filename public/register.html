@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>注册 - 小学生作文智能批改背诵平台</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      position: relative;
+    }
+    .register-card {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      max-width: 500px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 10;
+    }
+    .register-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .role-selector {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .role-option {
+      flex: 1;
+      padding: 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 1;
+    }
+    .role-option.active {
+      border-color: #667eea;
+      background: #f0f4ff;
+    }
+    .role-option i {
+      font-size: 2rem;
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+    .form-control {
+      border-radius: 10px;
+      border: 2px solid #e0e0e0;
+      padding: 12px 15px;
+      font-size: 16px;
+    }
+    .form-control:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 600;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    .back-link {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: white;
+      text-decoration: none;
+      font-size: 1.2rem;
+    }
+    .grade-class-section {
+      display: none;
+    }
+    .grade-class-section.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back-link">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+
+  <div class="container d-flex justify-content-center align-items-center min-vh-100">
+    <div class="register-card">
+      <div class="text-center mb-4">
+        <i class="bi bi-person-plus-fill" style="font-size: 3rem; color: #667eea;"></i>
+        <h1 class="register-title">注册账号</h1>
+        <p class="text-muted">选择您的角色开始使用</p>
+      </div>
+
+      <form id="registerForm" novalidate>
+        <!-- 角色选择 -->
+        <div class="role-selector mb-4">
+          <div class="role-option active" data-role="parent">
+            <i class="bi bi-person-check"></i>
+            <h5>家长</h5>
+          </div>
+          <div class="role-option" data-role="teacher">
+            <i class="bi bi-person-badge"></i>
+            <h5>教师</h5>
+          </div>
+        </div>
+
+        <input type="hidden" id="role" name="role" value="parent">
+
+        <div class="mb-3">
+          <label class="form-label">用户名 *</label>
+          <input type="text" class="form-control" id="username" name="username" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">密码 *</label>
+          <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">确认密码 *</label>
+          <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+        </div>
+
+        <div class="mb-3" id="parentInfo">
+          <label class="form-label">真实姓名</label>
+          <input type="text" class="form-control" id="realName" name="realName">
+        </div>
+
+        <!-- 家长填写年级班级 -->
+        <div id="gradeClassSection" class="grade-class-section show">
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label">选择年级 *</label>
+              <select class="form-control" id="grade" name="grade" required>
+                <option value="">请选择</option>
+                <option value="一年级">一年级</option>
+                <option value="二年级">二年级</option>
+                <option value="三年级">三年级</option>
+                <option value="四年级">四年级</option>
+                <option value="五年级">五年级</option>
+                <option value="六年级">六年级</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label">选择班级 *</label>
+              <select class="form-control" id="className" name="class_name" required>
+                <option value="">请选择</option>
+                <option value="1班">1班</option>
+                <option value="2班">2班</option>
+                <option value="3班">3班</option>
+                <option value="4班">4班</option>
+                <option value="5班">5班</option>
+                <option value="6班">6班</option>
+                <option value="7班">7班</option>
+                <option value="8班">8班</option>
+                <option value="9班">9班</option>
+                <option value="10班">10班</option>
+                <option value="11班">11班</option>
+                <option value="12班">12班</option>
+                <option value="13班">13班</option>
+                <option value="14班">14班</option>
+                <option value="15班">15班</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 教师填写信息 -->
+        <div id="teacherInfo" class="grade-class-section" style="display: none;">
+          <div class="mb-3">
+            <label class="form-label">真实姓名 *</label>
+            <input type="text" class="form-control" id="teacherRealName" name="realName" required>
+          </div>
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn btn-primary w-100 mb-3">
+          <i class="bi bi-person-plus me-2"></i>注册
+        </button>
+      </form>
+
+      <div class="text-center">
+        <p class="mb-0">已有账号？ <a href="parent-login.html" class="btn-link">立即登录</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // 页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('注册页面加载完成');
+
+      // 检查表单是否存在
+      const registerForm = document.getElementById('registerForm');
+      if (registerForm) {
+        console.log('表单元素已找到');
+      } else {
+        console.error('表单元素未找到');
+      }
+
+      // 检查提交按钮是否存在
+      const submitBtn = document.getElementById('submitBtn');
+      if (submitBtn) {
+        console.log('提交按钮已找到');
+      } else {
+        console.error('提交按钮未找到');
+      }
+    });
+
+    // 角色选择
+    document.querySelectorAll('.role-option').forEach(option => {
+      option.addEventListener('click', function() {
+        document.querySelectorAll('.role-option').forEach(opt => opt.classList.remove('active'));
+        this.classList.add('active');
+
+        const role = this.dataset.role;
+        document.getElementById('role').value = role;
+
+        // 显示/隐藏相应信息
+        const parentInfo = document.getElementById('parentInfo');
+        const teacherInfo = document.getElementById('teacherInfo');
+        const gradeClassSection = document.getElementById('gradeClassSection');
+
+        if (role === 'parent') {
+          parentInfo.style.display = 'block';
+          teacherInfo.style.display = 'none';
+          gradeClassSection.classList.add('show');
+        } else {
+          parentInfo.style.display = 'none';
+          teacherInfo.style.display = 'block';
+          gradeClassSection.classList.remove('show');
+        }
+      });
+    });
+
+    // 表单验证函数
+    function validateForm(role) {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const realNameInput = role === 'parent' ? 'realName' : 'teacherRealName';
+      const realName = document.getElementById(realNameInput).value.trim();
+
+      // 基本验证
+      if (!username) {
+        alert('请输入用户名');
+        return false;
+      }
+
+      if (!password) {
+        alert('请输入密码');
+        return false;
+      }
+
+      if (password !== confirmPassword) {
+        alert('两次输入的密码不一致');
+        return false;
+      }
+
+      if (!realName) {
+        alert('请输入真实姓名');
+        return false;
+      }
+
+      // 家长特有验证
+      if (role === 'parent') {
+        const grade = document.getElementById('grade').value;
+        const className = document.getElementById('className').value;
+
+        if (!grade) {
+          alert('请选择年级');
+          return false;
+        }
+
+        if (!className) {
+          alert('请选择班级');
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    // 显示加载状态
+    function setLoadingState(isLoading) {
+      const submitBtn = document.getElementById('submitBtn');
+      if (isLoading) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>注册中...';
+      } else {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-person-plus me-2"></i>注册';
+      }
+    }
+
+    // 表单提交
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const role = document.getElementById('role').value;
+
+      // 表单验证
+      if (!validateForm(role)) {
+        return;
+      }
+
+      // 显示加载状态
+      setLoadingState(true);
+
+      try {
+        // 构建表单数据
+        const formData = {
+          username: document.getElementById('username').value.trim(),
+          password: document.getElementById('password').value,
+          realName: document.getElementById(role === 'parent' ? 'realName' : 'teacherRealName').value.trim()
+        };
+
+        // 添加角色特定信息
+        if (role === 'parent') {
+          formData.grade = document.getElementById('grade').value;
+          formData.class_name = document.getElementById('className').value;
+        } else {
+          formData.subject = formData.grade; // 教师使用 grade 作为 subject
+          formData.school = '实验小学'; // 默认学校
+        }
+
+        // 根据角色选择不同的注册接口
+        const endpoint = role === 'parent' ? '/api/auth/parent/register' : '/api/auth/teacher/register';
+
+        const res = await fetch(`http://localhost:3003${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          // 注册成功，保存用户信息到 localStorage
+          localStorage.setItem('userRole', role);
+          localStorage.setItem('userInfo', JSON.stringify(data.user));
+          localStorage.setItem('registrationSuccess', 'true');
+
+          // 显示成功消息
+          alert('注册成功！请使用您刚注册的账号登录');
+
+          // 跳转到登录页
+          window.location.href = role === 'parent' ? 'parent-login.html' : 'teacher-login.html';
+        } else {
+          alert(data.error || '注册失败，请重试');
+        }
+      } catch (err) {
+        console.error('注册错误:', err);
+        alert('注册失败，请检查网络连接后重试');
+      } finally {
+        // 恢复按钮状态
+        setLoadingState(false);
+      }
+    });
+
+    // 监听角色切换，更新必填项提示
+    document.querySelectorAll('.role-option').forEach(option => {
+      option.addEventListener('click', function() {
+        document.querySelectorAll('.role-option').forEach(opt => opt.classList.remove('active'));
+        this.classList.add('active');
+
+        const role = this.dataset.role;
+        document.getElementById('role').value = role;
+
+        // 显示/隐藏相应信息
+        const parentInfo = document.getElementById('parentInfo');
+        const teacherInfo = document.getElementById('teacherInfo');
+        const gradeClassSection = document.getElementById('gradeClassSection');
+
+        if (role === 'parent') {
+          parentInfo.style.display = 'block';
+          teacherInfo.style.display = 'none';
+          gradeClassSection.classList.add('show');
+        } else {
+          parentInfo.style.display = 'none';
+          teacherInfo.style.display = 'block';
+          gradeClassSection.classList.remove('show');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

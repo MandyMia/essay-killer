@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>连接调试页面</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .test-box {
+      background: #f5f5f5;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 10px 0;
+      border-left: 4px solid #007bff;
+    }
+    .error { border-left-color: #dc3545; }
+    .success { border-left-color: #28a745; }
+    .code { background: #000; color: #0f0; padding: 10px; border-radius: 4px; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <h1>连接调试页面</h1>
+
+  <div class="test-box">
+    <h3>1. 测试后端连接</h3>
+    <button onclick="testBackendConnection()">测试连接</button>
+    <div id="backend-result"></div>
+  </div>
+
+  <div class="test-box">
+    <h3>2. 测试 CORS</h3>
+    <button onclick="testCORS()">测试跨域</button>
+    <div id="cors-result"></div>
+  </div>
+
+  <div class="test-box">
+    <h3>3. 测试注册接口</h3>
+    <button onclick="testRegister()">测试注册</button>
+    <div id="register-result"></div>
+  </div>
+
+  <div class="test-box">
+    <h3>4. 测试登录接口</h3>
+    <button onclick="testLogin()">测试登录</button>
+    <div id="login-result"></div>
+  </div>
+
+  <div class="test-box">
+    <h3>5. 网络信息</h3>
+    <div id="network-info"></div>
+  </div>
+
+  <script>
+    // 显示网络信息
+    function showNetworkInfo() {
+      const info = document.getElementById('network-info');
+      info.innerHTML = `
+        <p><strong>当前页面:</strong> ${window.location.href}</p>
+        <p><strong>Origin:</strong> ${window.location.origin}</p>
+        <p><strong>User Agent:</strong> ${navigator.userAgent}</p>
+      `;
+    }
+
+    // 测试后端连接
+    async function testBackendConnection() {
+      const resultDiv = document.getElementById('backend-result');
+      resultDiv.innerHTML = '<div class="loading">测试中...</div>';
+
+      try {
+        // 使用 fetch 的 mode: 'no-cors' 来测试基本连接
+        const response = await fetch('http://localhost:3003/', {
+          method: 'HEAD',
+          mode: 'no-cors'
+        });
+
+        resultDiv.innerHTML = '<div class="success">✅ 后端服务器可访问</div>';
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="error">❌ 无法连接到后端: ${error.message}</div>`;
+      }
+    }
+
+    // 测试 CORS
+    async function testCORS() {
+      const resultDiv = document.getElementById('cors-result');
+      resultDiv.innerHTML = '<div class="loading">测试中...</div>';
+
+      try {
+        const response = await fetch('http://localhost:3003/', {
+          method: 'GET'
+        });
+
+        if (response.ok) {
+          resultDiv.innerHTML = '<div class="success">✅ CORS 配置正常</div>';
+        } else {
+          resultDiv.innerHTML = `<div class="error">❌ CORS 响应异常: ${response.status}</div>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="error">❌ CORS 错误: ${error.message}</div>`;
+      }
+    }
+
+    // 测试注册
+    async function testRegister() {
+      const resultDiv = document.getElementById('register-result');
+      resultDiv.innerHTML = '<div class="loading">测试中...</div>';
+
+      try {
+        const response = await fetch('http://localhost:3003/api/auth/parent/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            username: 'debug_test_' + Date.now(),
+            password: '123456',
+            realName: '调试用户',
+            grade: '三年级',
+            class_name: '1班'
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          resultDiv.innerHTML = `<div class="success">✅ 注册成功! ID: ${data.user.id}</div>`;
+        } else {
+          resultDiv.innerHTML = `<div class="error">❌ 注册失败: ${data.error || '未知错误'}</div>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="error">❌ 网络错误: ${error.message}</div><div class="code">${error.stack}</div>`;
+      }
+    }
+
+    // 测试登录
+    async function testLogin() {
+      const resultDiv = document.getElementById('login-result');
+      resultDiv.innerHTML = '<div class="loading">测试中...</div>';
+
+      try {
+        // 先注册一个测试账号
+        const registerResponse = await fetch('http://localhost:3003/api/auth/parent/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            username: 'login_test_' + Date.now(),
+            password: '123456',
+            realName: '登录测试用户',
+            grade: '四年级',
+            class_name: '2班'
+          })
+        });
+
+        const registerData = await registerResponse.json();
+
+        if (registerResponse.ok) {
+          // 使用刚注册的账号登录
+          const loginResponse = await fetch('http://localhost:3003/api/auth/parent/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              username: registerData.user.username,
+              password: '123456'
+            })
+          });
+
+          const loginData = await loginResponse.json();
+
+          if (loginResponse.ok) {
+            resultDiv.innerHTML = `<div class="success">✅ 登录成功! ID: ${loginData.user.id}, 用户名: ${loginData.user.username}</div>`;
+          } else {
+            resultDiv.innerHTML = `<div class="error">❌ 登录失败: ${loginData.error || '未知错误'}</div>`;
+          }
+        } else {
+          resultDiv.innerHTML = `<div class="error">❌ 无法注册测试账号: ${registerData.error}</div>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="error">❌ 网络错误: ${error.message}</div><div class="code">${error.stack}</div>`;
+      }
+    }
+
+    // 页面加载时显示网络信息
+    window.onload = function() {
+      showNetworkInfo();
+      // 自动测试连接
+      setTimeout(testBackendConnection, 1000);
+    };
+  </script>
+</body>
+</html>

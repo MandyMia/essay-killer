@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>家长登录 - 小学生作文智能批改背诵平台</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .login-card {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      max-width: 450px;
+      margin: 0 auto;
+    }
+    .login-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .login-subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    .form-control {
+      border-radius: 10px;
+      border: 2px solid #e0e0e0;
+      padding: 12px 15px;
+      font-size: 16px;
+    }
+    .form-control:focus {
+      border-color: #28a745;
+      box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 600;
+      font-size: 16px;
+      width: 100%;
+    }
+    .back-link {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: white;
+      text-decoration: none;
+      font-size: 1.2rem;
+    }
+    .form-floating label {
+      color: #666;
+    }
+    .login-footer {
+      text-align: center;
+      margin-top: 30px;
+    }
+    .login-footer a {
+      color: #28a745;
+      text-decoration: none;
+    }
+    .login-footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back-link">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+
+  <div class="container d-flex justify-content-center align-items-center min-vh-100">
+    <div class="login-card">
+      <div class="text-center mb-4">
+        <i class="bi bi-person-check-fill" style="font-size: 3rem; color: #28a745;"></i>
+        <h1 class="login-title">家长登录</h1>
+        <p class="login-subtitle">登录管理孩子的作文学习</p>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="username" placeholder="请输入用户名" required>
+          <label for="username">用户名</label>
+        </div>
+
+        <div class="form-floating mb-4">
+          <input type="password" class="form-control" id="password" placeholder="请输入密码" required>
+          <label for="password">密码</label>
+        </div>
+
+        <div class="mb-3">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="rememberMe">
+            <label class="form-check-label" for="rememberMe">
+              记住我
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary mb-3">
+          <i class="bi bi-box-arrow-in-right me-2"></i>登录
+        </button>
+      </form>
+
+      <div class="login-footer">
+        <p class="mb-0">还没有账号？ <a href="register.html">立即注册</a></p>
+        <p class="mb-0 mt-2"><a href="teacher-login.html">教师登录</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // 检查是否刚注册成功
+    if (localStorage.getItem('registrationSuccess') === 'true') {
+      alert('欢迎！请使用您刚注册的账号登录');
+      localStorage.removeItem('registrationSuccess');
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      // 显示加载状态
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>登录中...';
+      submitBtn.disabled = true;
+
+      try {
+        console.log('尝试登录:', { username });
+        console.log('API地址:', 'http://localhost:3003/api/auth/parent/login');
+
+        const res = await fetch('http://localhost:3003/api/auth/parent/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ username, password })
+        });
+
+        console.log('响应状态:', res.status);
+
+        const data = await res.json();
+        console.log('响应数据:', data);
+
+        if (res.ok) {
+          // 保存用户信息到 localStorage
+          localStorage.setItem('userRole', 'parent');
+          localStorage.setItem('userInfo', JSON.stringify(data.user));
+          localStorage.setItem('isAuthenticated', 'true');
+
+          // 显示成功提示
+          alert('登录成功！欢迎回来');
+
+          // 跳转到功能主页
+          window.location.href = 'feature-center.html';
+        } else {
+          alert(data.error || '登录失败，请检查用户名和密码');
+        }
+      } catch (err) {
+        console.error('登录错误:', err);
+        alert('登录失败: ' + err.message + '\n请确保后端服务器正在运行 (localhost:3003)');
+      } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+      }
+    });
+
+    // 检查是否已经登录
+    window.addEventListener('load', () => {
+      if (localStorage.getItem('isAuthenticated') === 'true' && localStorage.getItem('userRole') === 'parent') {
+        // 如果已经登录，直接跳转到主页
+        window.location.href = 'feature-center.html';
+      }
+    });
+  </script>
+</body>
+</html>

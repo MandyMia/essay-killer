@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>家长中心 - 小学生作文智能批改背诵平台</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background: #f8f9fa;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .navbar {
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .main-container {
+      margin-top: 20px;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+    }
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+    .stat-card i {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+    .stat-card.primary i {
+      color: #667eea;
+    }
+    .stat-card.success i {
+      color: #28a745;
+    }
+    .stat-card.warning i {
+      color: #ffc107;
+    }
+    .stat-card.danger i {
+      color: #dc3545;
+    }
+    .action-buttons {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .action-btn {
+      width: 100%;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      padding: 15px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .essay-list {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .essay-item {
+      border-bottom: 1px solid #eee;
+      padding: 15px 0;
+    }
+    .essay-item:last-child {
+      border-bottom: none;
+    }
+    .badge-new {
+      background: #28a745;
+    }
+    .badge-completed {
+      background: #17a2b8;
+    }
+    .badge-pending {
+      background: #ffc107;
+    }
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      padding: 10px 0;
+    }
+    .nav-tabs .nav-link {
+      border: none;
+      color: #666;
+    }
+    .nav-tabs .nav-link.active {
+      color: #667eea;
+      border-bottom: 3px solid #667eea;
+    }
+    .page {
+      display: none;
+    }
+    .page.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+      <a class="navbar-brand" href="#">
+        <i class="bi bi-mortarboard-fill text-primary me-2"></i>
+        <strong>小学生作文批改平台</strong>
+      </a>
+      <div class="d-flex align-items-center">
+        <span class="me-3">
+          <i class="bi bi-person-circle text-primary"></i>
+          <span id="username">张三</span>
+        </span>
+        <button class="btn btn-outline-primary btn-sm" onclick="logout()">
+          <i class="bi bi-box-arrow-right"></i> 退出
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container main-container">
+    <!-- 页面切换标签 -->
+    <ul class="nav nav-tabs mb-4">
+      <li class="nav-item">
+        <a class="nav-link active" href="#" onclick="showPage('dashboard')">
+          <i class="bi bi-speedometer2 me-1"></i> 概览
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" onclick="showPage('upload')">
+          <i class="bi bi-cloud-upload me-1"></i> 上传作文
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" onclick="showPage('essays')">
+          <i class="bi bi-file-text me-1"></i> 我的作文
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" onclick="showPage('favorites')">
+          <i class="bi bi-star me-1"></i> 收藏范文
+        </a>
+      </li>
+    </ul>
+
+    <!-- 概览页面 -->
+    <div id="dashboard-page" class="page active">
+      <div class="row mb-4">
+        <div class="col-md-3 col-6 mb-3">
+          <div class="stat-card primary">
+            <i class="bi bi-file-earmark-text"></i>
+            <h3 class="mb-0">5</h3>
+            <p class="text-muted mb-0">总作文数</p>
+          </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+          <div class="stat-card success">
+            <i class="bi bi-check-circle"></i>
+            <h3 class="mb-0">3</h3>
+            <p class="text-muted mb-0">已完成批改</p>
+          </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+          <div class="stat-card warning">
+            <i class="bi bi-clock"></i>
+            <h3 class="mb-0">2</h3>
+            <p class="text-muted mb-0">待批改</p>
+          </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+          <div class="stat-card danger">
+            <i class="bi bi-star"></i>
+            <h3 class="mb-0">8</h3>
+            <p class="text-muted mb-0">收藏范文</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4">
+          <div class="action-buttons">
+            <h5 class="mb-3">快速操作</h5>
+            <button class="btn btn-primary action-btn" onclick="showPage('upload')">
+              <i class="bi bi-camera me-2"></i>拍照上传作文
+            </button>
+            <button class="btn btn-outline-primary action-btn" onclick="showPage('essays')">
+              <i class="bi bi-list-ul me-2"></i>查看所有作文
+            </button>
+            <button class="btn btn-outline-primary action-btn" onclick="showPage('favorites')">
+              <i class="bi bi-bookmark me-2"></i>浏览收藏范文
+            </button>
+          </div>
+        </div>
+        <div class="col-md-8">
+          <div class="essay-list">
+            <h5 class="mb-3">最新作文</h5>
+            <div class="essay-item">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="mb-1">春天来了</h6>
+                  <p class="text-muted mb-0 small">2024-04-28 14:30</p>
+                </div>
+                <span class="badge badge-new">已完成</span>
+              </div>
+            </div>
+            <div class="essay-item">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="mb-1">我的妈妈</h6>
+                  <p class="text-muted mb-0 small">2024-04-27 10:15</p>
+                </div>
+                <span class="badge badge-pending">待批改</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 上传作文页面 -->
+    <div id="upload-page" class="page">
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title mb-4">
+                <i class="bi bi-camera me-2"></i>拍照上传作文
+              </h5>
+              <div class="upload-area mb-3">
+                <img id="preview-image" src="https://picsum.photos/seed/upload/400/300.jpg" class="img-fluid rounded" style="max-width: 100%;">
+                <input type="file" id="file-input" accept="image/*" style="display: none;">
+              </div>
+              <button class="btn btn-primary w-100" onclick="document.getElementById('file-input').click()">
+                <i class="bi bi-camera me-2"></i>选择图片
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title mb-4">
+                <i class="bi bi-keyboard me-2"></i>手动输入作文
+              </h5>
+              <form id="manual-form">
+                <div class="mb-3">
+                  <label class="form-label">作文题目</label>
+                  <input type="text" class="form-control" id="manual-title">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">作文内容</label>
+                  <textarea class="form-control" id="manual-content" rows="10"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">
+                  <i class="bi bi-send me-2"></i>提交作文
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 我的作文页面 -->
+    <div id="essays-page" class="page">
+      <div class="essay-list">
+        <h5 class="mb-3">我的作文</h5>
+        <div class="essay-item">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <h6 class="mb-1">春天来了</h6>
+              <p class="text-muted mb-1 small">文字识别完整度：98%</p>
+              <p class="mb-0 small">2024-04-28 14:30</p>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-outline-primary" onclick="viewEssay(1)">
+                <i class="bi bi-eye"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-success" onclick="correctEssay(1)">
+                <i class="bi bi-check-circle"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteEssay(1)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="essay-item">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <h6 class="mb-1">我的妈妈</h6>
+              <p class="text-muted mb-1 small">待批改</p>
+              <p class="mb-0 small">2024-04-27 10:15</p>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-outline-primary" onclick="viewEssay(2)">
+                <i class="bi bi-eye"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-primary" onclick="correctEssay(2)">
+                <i class="bi bi-magic"></i> AI批改
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteEssay(2)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 收藏范文页面 -->
+    <div id="favorites-page" class="page">
+      <div class="essay-list">
+        <h5 class="mb-3">收藏的范文</h5>
+        <div class="essay-item">
+          <div>
+            <h6 class="mb-2">春天来了 - 高分范文</h6>
+            <p class="mb-2 text-muted">春天来了，花儿开了。小鸟在树上欢快地歌唱着。这是一个美丽的早晨，阳光洒在大地上，一切都显得生机勃勃...</p>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="text-muted small">收藏于 2024-04-28</span>
+              <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-primary" onclick="viewEssay(1)">
+                  <i class="bi bi-book"></i> 阅读
+                </button>
+                <button class="btn btn-sm btn-outline-success" onclick="exportWord(1)">
+                  <i class="bi bi-file-word"></i> 导出
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/wordExport.js"></script>
+  <script src="js/auth-utils.js"></script>
+  <script>
+    // 显示页面
+    function showPage(pageName) {
+      // 隐藏所有页面
+      document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+      });
+
+      // 显示选中页面
+      document.getElementById(pageName + '-page').classList.add('active');
+
+      // 更新标签激活状态
+      document.querySelectorAll('.nav-tabs .nav-link').forEach(link => {
+        link.classList.remove('active');
+      });
+      event.target.classList.add('active');
+    }
+
+    // 登出
+    function logout() {
+      if (confirm('确定要退出登录吗？')) {
+        // 清除后端 session
+        fetch('http://localhost:3003/api/auth/logout', { method: 'POST' })
+          .then(() => {
+            // 清除前端存储
+            authUtils.clearAuth();
+            window.location.href = 'index.html';
+          })
+          .catch(err => {
+            console.error('退出登录失败:', err);
+            // 即使后端失败也清除前端数据
+            authUtils.clearAuth();
+            window.location.href = 'index.html';
+          });
+      }
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      // 检查登录状态
+      if (!authUtils.checkAuth() || !authUtils.checkRole('parent')) {
+        window.location.href = 'parent-login.html';
+        return;
+      }
+
+      const user = authUtils.getUserInfo();
+      document.getElementById('username').textContent = user.real_name || user.username;
+
+      // 文件上传
+      document.getElementById('file-input').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            document.getElementById('preview-image').src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      // 手动提交表单
+      document.getElementById('manual-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const title = document.getElementById('manual-title').value;
+        const content = document.getElementById('manual-content').value;
+
+        if (!title || !content) {
+          alert('请填写完整信息');
+          return;
+        }
+
+        // 模拟提交
+        alert('作文提交成功！');
+        showPage('essays');
+      });
+    });
+
+    // 作文操作函数
+    function viewEssay(id) {
+      window.location.href = `essay-detail.html?id=${id}`;
+    }
+
+    function correctEssay(id) {
+      alert('正在AI批改中...');
+      setTimeout(() => {
+        alert('批改完成！');
+        showPage('essays');
+      }, 2000);
+    }
+
+    function deleteEssay(id) {
+      if (confirm('确定要删除这篇作文吗？')) {
+        alert('删除成功！');
+        showPage('essays');
+      }
+    }
+
+    function exportWord(id) {
+      alert('正在生成Word文档...');
+      setTimeout(() => {
+        alert('导出成功！');
+      }, 1500);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "essay-grading-edgeone",
+  "version": "1.0.0",
+  "description": "小学生作文批改平台 - EdgeOne Pages 部署版本",
+  "main": "api/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "edgeone pages dev",
+    "deploy": "edgeone pages deploy",
+    "build": "echo 'Static build complete'",
+    "preview": "edgeone pages project preview"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "edgeone": "^1.4.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
