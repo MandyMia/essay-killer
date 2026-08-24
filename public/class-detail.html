@@ -282,9 +282,6 @@
           <span class="badge bg-secondary ms-2" id="studentCountBadge">0</span>
         </h5>
         <div class="d-flex gap-2">
-          <button class="btn btn-outline-secondary btn-sm" onclick="goToNewAssignment()">
-            <i class="bi bi-plus-circle me-1"></i>布置新作业
-          </button>
           <button class="btn btn-outline-primary btn-sm" id="toggleStudentsBtn" onclick="toggleStudents()">
             <i class="bi bi-chevron-up me-1"></i>收起
           </button>
@@ -461,7 +458,17 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/auth-utils.js"></script>
   <script>
-    // 全局变量
+    function escapeJs(text) {
+      if (!text) return '';
+      return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/'/g, "\\'");
+    }
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
     let classId = null;
     let currentPage = 1;
     let totalPages = 1;
@@ -470,7 +477,11 @@
     let currentOrder = 'asc';
     let allStudents = [];
 
-    const API_BASE = 'http://localhost:3003/api';
+    const API_BASE = '/api';
+    const authFetch = (url, options = {}) => fetch(url, {
+      ...options,
+      headers: authUtils.authHeaders(options.headers || {})
+    });
 
     // 获取URL参数
     function getClassId() {
@@ -495,7 +506,6 @@
 
       loadClassDetail();
       loadStudents();
-      loadBlacklist();
       loadAssignments();
 
       // 学生搜索
@@ -507,7 +517,7 @@
     // 加载班级详情
     async function loadClassDetail() {
       try {
-        const response = await fetch(`${API_BASE}/classes/${classId}`);
+        const response = await authFetch(`${API_BASE}/classes/${classId}`);
         const result = await response.json();
 
         if (result.success) {
@@ -538,15 +548,20 @@
           sortOrder: currentOrder
         });
 
-        const response = await fetch(`${API_BASE}/classes/${classId}/students?${params}`);
+        console.log('[学生名单] 请求:', `${API_BASE}/classes/${classId}`);
+        const response = await authFetch(`${API_BASE}/classes/${classId}`);
         const result = await response.json();
-
-        if (result.success) {
-          allStudents = result.data.students || [];
-          totalPages = result.data.totalPages || 1;
-          renderStudentTable(allStudents);
-          renderPagination(result.data.page, result.data.totalPages, result.data.total);
-        }
+        console.log('[学生名单] 原始接口返回:', result);
+        let students = [];
+        if (Array.isArray(result)) students = result;
+        else if (Array.isArray(result?.data)) students = result.data;
+        else if (Array.isArray(result?.data?.students)) students = result.data.students;
+        else if (Array.isArray(result?.students)) students = result.students;
+        console.log('[学生名单] 解析后的学生数量:', students.length);
+        allStudents = students;
+        totalPages = 1;
+        renderStudentTable(allStudents);
+        renderPagination(1, 1, allStudents.length);
       } catch (error) {
         console.error('加载学生列表失败:', error);
         showToast('加载学生列表失败', 'error');
@@ -856,41 +871,10 @@
       }
     }
 
-    // 加载黑名单
+    // 黑名单功能当前没有对应的 Supabase 表，暂不请求不存在的接口。
     async function loadBlacklist() {
-      try {
-        const response = await fetch(`${API_BASE}/classes/${classId}/blacklist`);
-        const result = await response.json();
-
-        if (result.success) {
-          const list = result.data || [];
-          const blacklistCard = document.getElementById('blacklistCard');
-          const blacklistContent = document.getElementById('blacklistContent');
-          const blacklistCount = document.getElementById('blacklistCount');
-
-          if (list.length > 0) {
-            blacklistCard.style.display = 'block';
-            blacklistCount.textContent = list.length;
-            blacklistContent.innerHTML = list.map(b => `
-              <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                <div>
-                  <strong>${b.studentName}</strong>
-                  <small class="text-muted ms-2">${b.reason || '无原因'}</small>
-                  <br>
-                  <small class="text-muted">移出时间：${new Date(b.createdAt).toLocaleString()}</small>
-                </div>
-                <button class="btn btn-sm btn-success" onclick="approveStudent(${b.studentId})">
-                  <i class="bi bi-check-circle me-1"></i>批准重新加入
-                </button>
-              </div>
-            `).join('');
-          } else {
-            blacklistCard.style.display = 'none';
-          }
-        }
-      } catch (error) {
-        console.error('加载黑名单失败:', error);
-      }
+      const card = document.getElementById('blacklistCard');
+      if (card) card.style.display = 'none';
     }
 
     // 批准学生重新加入
@@ -935,15 +919,16 @@
     // 加载作业列表
     async function loadAssignments() {
       try {
-        const response = await fetch(`${API_BASE}/classes/${classId}/assignments`, {
-          credentials: 'include'
-        });
+        console.log('[班级作业] 请求:', `${API_BASE}/assignments?class_id=${classId}`);
+        const response = await authFetch(`${API_BASE}/assignments?class_id=${encodeURIComponent(classId)}`);
         const result = await response.json();
+        console.log('[班级作业] 响应:', response.status, result);
+        const assignments = result.assignments || result.data || [];
         const listEl = document.getElementById('assignmentsList');
         const emptyEl = document.getElementById('assignmentsEmpty');
         const countEl = document.getElementById('assignmentCount');
 
-        if (!result.success || result.data.length === 0) {
+        if (!result.success || assignments.length === 0) {
           listEl.innerHTML = '';
           emptyEl.style.display = '';
           countEl.textContent = '0';
@@ -951,7 +936,7 @@
         }
 
         emptyEl.style.display = 'none';
-        countEl.textContent = result.data.length;
+        countEl.textContent = assignments.length;
         listEl.innerHTML = `
           <div class="table-responsive">
             <table class="table table-custom">
@@ -967,7 +952,7 @@
                 </tr>
               </thead>
               <tbody>
-                ${result.data.map((a, i) => renderAssignmentRow(a, i)).join('')}
+                ${assignments.map((a, i) => renderAssignmentRow(a, i)).join('')}
               </tbody>
             </table>
           </div>`;
@@ -979,8 +964,12 @@
 
     // 渲染单行作业
     function renderAssignmentRow(a, i) {
-      const progressBar = renderProgressBar(a.progress);
-      const avgDisplay = a.avgScore !== null ? a.avgScore.toFixed(1) : '—';
+      const progress = Number.isFinite(Number(a.progress)) ? Number(a.progress) : 0;
+      const submitted = Number.isFinite(Number(a.submitted)) ? Number(a.submitted) : 0;
+      const totalStudents = Number.isFinite(Number(a.totalStudents)) ? Number(a.totalStudents) : 0;
+      const avgScore = Number.isFinite(Number(a.avgScore)) ? Number(a.avgScore) : null;
+      const progressBar = renderProgressBar(progress);
+      const avgDisplay = avgScore != null ? avgScore.toFixed(1) : '—';
       const deadlineClass = isDeadlinePassed(a.deadline) ? 'text-danger' : '';
       const deadlineDisplay = a.deadline ? formatDate(a.deadline) : '未设置';
 
@@ -1000,29 +989,46 @@
           <td>
             <div class="d-flex align-items-center gap-2">
               <span class="progress-text-bar">${progressBar}</span>
-              <span class="small text-muted">${a.submitted}/${a.totalStudents} (${a.progress}%)</span>
+              <span class="small text-muted">${submitted}/${totalStudents} (${progress}%)</span>
             </div>
           </td>
           <td class="fw-bold">${avgDisplay}</td>
           <td>
-            <button class="btn btn-sm btn-outline-primary btn-action me-1" onclick="goToGrading(${a.id})">
+            <button class="btn btn-sm btn-outline-primary btn-action me-1" onclick="viewAssignmentSubmissions('${escapeJs(a.id)}')">
               <i class="bi bi-pencil-square"></i> 查看批改
             </button>
-            ${canEdit ? `
-              <button class="btn btn-sm btn-outline-secondary btn-action me-1" onclick="editAssignment(${a.id})">
-                <i class="bi bi-pencil"></i> 编辑
-              </button>
-            ` : ''}
-            <button class="btn btn-sm btn-outline-danger btn-action" onclick="deleteAssignment(${a.id}, ${a.submitted})">
-              <i class="bi bi-trash"></i>
-            </button>
+
           </td>
         </tr>`;
     }
 
-    // 渲染进度条（文本）
+    async function viewAssignmentSubmissions(assignmentId) {
+      try {
+        const response = await authUtils.apiFetch(`/api/assignments/${encodeURIComponent(assignmentId)}/submissions`);
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.error || '加载提交失败');
+        const rows = result.submissions || result.data || [];
+        const html = rows.map(row => {
+          const s = row.submission;
+          return `<tr><td>${escapeHtml(row.username)}</td><td>${s?.created_at ? formatDate(s.created_at) : '-'}</td><td>${s?.status || '未提交'}</td><td>${s?.score ?? '-'}</td><td>${s?.teacher_score ?? '-'}</td><td>${s ? `<button class="btn btn-sm btn-primary" onclick="openSubmissionGrading('${escapeJs(s.id)}')">查看批改</button>` : '-'}</td></tr>`;
+        }).join('');
+        const modal = document.getElementById('submissionModal') || document.body.appendChild(Object.assign(document.createElement('div'), { id: 'submissionModal', className: 'modal fade show d-block', innerHTML: `<div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5>学生提交情况</h5><button class="btn-close" onclick="closeSubmissionModal()"></button></div><div class="modal-body"><div class="table-responsive"><table class="table"><thead><tr><th>学生</th><th>提交时间</th><th>状态</th><th>AI评分</th><th>老师评分</th><th>操作</th></tr></thead><tbody>${html}</tbody></table></div><div id="submissionGradingPanel"></div></div></div></div>` }));
+        modal.style.display = 'block';
+      } catch (error) { console.error('加载作业提交失败:', error); showToast('加载提交失败', 'error'); }
+    }
+    function closeSubmissionModal() { const modal = document.getElementById('submissionModal'); if (modal) modal.remove(); }
+    async function openSubmissionGrading(id) {
+      const response = await authUtils.apiFetch(`/api/submissions/${encodeURIComponent(id)}`); const result = await response.json(); if (!response.ok || !result.success) return showToast(result.error || '加载提交失败', 'error');
+      const s = result.submission || result.data; const panel = document.getElementById('submissionGradingPanel');
+      panel.innerHTML = `<hr><h6>作文原文</h6><textarea class="form-control mb-2" rows="6" readonly></textarea><details class="mb-2"><summary>查看OCR文本</summary><pre></pre></details><p>AI评分：${s.score ?? '-'}<br>AI评价：${escapeHtml(s.feedback || '-')}</p><label>老师评分</label><input id="teacherScoreInput" class="form-control mb-2" type="number" min="0" max="100" value="${s.teacher_score ?? ''}"><label>老师评语</label><textarea id="teacherFeedbackInput" class="form-control mb-2" rows="3">${escapeHtml(s.teacher_feedback || '')}</textarea><button class="btn btn-primary" onclick="saveSubmissionGrade('${escapeJs(id)}')">提交批改</button>`;
+      panel.querySelector('textarea').value = s.essay_text || ''; panel.querySelector('pre').textContent = s.ocr_text || '无';
+    }
+    async function saveSubmissionGrade(id) { const score = Number(document.getElementById('teacherScoreInput').value); if (!Number.isInteger(score) || score < 0 || score > 100) return showToast('请输入0-100分', 'warning'); const response = await authUtils.apiFetch(`/api/submissions/${encodeURIComponent(id)}`, { method: 'PATCH', headers: authUtils.authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ teacher_score: score, teacher_feedback: document.getElementById('teacherFeedbackInput').value, status: 'graded' }) }); const result = await response.json(); if (!response.ok || !result.success) return showToast(result.error || '批改失败', 'error'); showToast('批改成功', 'success'); closeSubmissionModal(); }
+
+
     function renderProgressBar(percent) {
-      const filled = Math.round(percent / 10);
+      const safePercent = Number.isFinite(Number(percent)) ? Math.max(0, Math.min(100, Number(percent))) : 0;
+      const filled = Math.round(safePercent / 10);
       const empty = 10 - filled;
       return '<span class="text-success">█</span>'.repeat(filled) + '<span style="color:#ddd">░</span>'.repeat(empty);
     }
@@ -1049,9 +1055,7 @@
     // 查看作业详情
     async function viewAssignmentDetail(assignmentId) {
       try {
-        const response = await fetch(`${API_BASE}/classes/${classId}/assignments`, {
-          credentials: 'include'
-        });
+        const response = await authFetch(`${API_BASE}/assignments?class_id=${encodeURIComponent(classId)}`);
         const result = await response.json();
         const a = result.data.find(x => x.id === assignmentId);
         if (!a) { showToast('作业不存在', 'error'); return; }
@@ -1073,18 +1077,9 @@
 
         const footer = document.getElementById('drawerFooter');
         const actions = document.getElementById('drawerActions');
-        const canEdit = !isDeadlinePassed(a.deadline);
         actions.innerHTML = `
           <button class="btn btn-primary" onclick="goToGrading(${a.id})">
             <i class="bi bi-pencil-square me-1"></i>查看批改
-          </button>
-          ${canEdit ? `
-            <button class="btn btn-outline-secondary" onclick="editAssignment(${a.id})">
-              <i class="bi bi-pencil me-1"></i>编辑作业
-            </button>
-          ` : ''}
-          <button class="btn btn-outline-danger" onclick="deleteAssignment(${a.id}, ${a.submitted})">
-            <i class="bi bi-trash me-1"></i>删除
           </button>`;
         footer.style.display = '';
 
@@ -1101,43 +1096,7 @@
       window.location.href = `teacher-dashboard.html?grading=${assignmentId}`;
     }
 
-    // 编辑作业
-    function editAssignment(assignmentId) {
-      // 将作业数据存入sessionStorage，跳转到布置页面填充
-      if (currentAssignment) {
-        sessionStorage.setItem('editingAssignment', JSON.stringify(currentAssignment));
-      }
-      window.location.href = `assign-work.html?classId=${classId}&editId=${assignmentId}`;
-    }
-
-    // 删除作业
-    async function deleteAssignment(assignmentId, submittedCount) {
-      const hasSubmissions = submittedCount > 0;
-      let confirmMsg = `确定要删除此作业吗？`;
-      if (hasSubmissions) {
-        confirmMsg = `删除将同时删除所有学生提交的作文（${submittedCount}篇），不可恢复！\n\n确定要继续吗？`;
-      }
-      if (!confirm(confirmMsg)) return;
-
-      try {
-        const response = await fetch(`${API_BASE}/classes/${classId}/assignments/${assignmentId}`, {
-          method: 'DELETE',
-          credentials: 'include'
-        });
-        const result = await response.json();
-        if (result.success) {
-          showToast('作业已删除', 'success');
-          closeDrawer();
-          loadAssignments();
-        } else {
-          showToast(result.error || '删除失败', 'error');
-        }
-      } catch (error) {
-        console.error('删除作业失败:', error);
-        showToast('网络错误，请重试', 'error');
-      }
-    }
-
+    // 作业编辑和删除功能已移除。
     // 抽屉控制
     function openDrawer() {
       document.getElementById('drawerPanel').classList.add('open');

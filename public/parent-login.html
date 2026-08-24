@@ -90,8 +90,8 @@
 
       <form id="loginForm">
         <div class="form-floating mb-3">
-          <input type="text" class="form-control" id="username" placeholder="请输入用户名" required>
-          <label for="username">用户名</label>
+          <input type="email" class="form-control" id="username" placeholder="请输入邮箱地址" required>
+          <label for="username">邮箱</label>
         </div>
 
         <div class="form-floating mb-4">
@@ -130,7 +130,11 @@
 
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const username = document.getElementById('username').value;
+      const username = document.getElementById('username').value.trim();
+      if (!username || !username.includes('@')) {
+        alert('请输入有效的邮箱地址');
+        return;
+      }
       const password = document.getElementById('password').value;
 
       // 显示加载状态
@@ -143,11 +147,11 @@
         console.log('尝试登录:', { username });
         console.log('API地址:', 'http://localhost:3003/api/auth/parent/login');
 
-        const res = await fetch('http://localhost:3003/api/auth/parent/login', {
+        const res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ username, password })
+          body: JSON.stringify({ email: username, password })
         });
 
         console.log('响应状态:', res.status);
@@ -157,9 +161,11 @@
 
         if (res.ok) {
           // 保存用户信息到 localStorage
-          localStorage.setItem('userRole', 'parent');
+          localStorage.setItem('userRole', data.user.role === 'student' ? 'student' : 'parent');
           localStorage.setItem('userInfo', JSON.stringify(data.user));
           localStorage.setItem('isAuthenticated', 'true');
+          if (data.session?.access_token) localStorage.setItem('supabaseAccessToken', data.session.access_token);
+          if (data.session?.refresh_token) localStorage.setItem('supabaseRefreshToken', data.session.refresh_token);
 
           // 显示成功提示
           alert('登录成功！欢迎回来');

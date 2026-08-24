@@ -1,76 +1,21 @@
-/**
- * 登录 API
- * POST /api/auth/login
- */
-const db = require('../db');
+const { createAnonClient } = require('../_supabase');
 
 module.exports = async function (request) {
-  // 处理 CORS 预检请求
-  if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: getCorsHeaders()
-    });
-  }
-
-  if (request.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed' }, 405);
-  }
-
+  if (request.method === 'OPTIONS') return new Response(null, { status: 200, headers: cors() });
+  if (request.method !== 'POST') return json({ success: false, error: 'Method not allowed' }, 405);
   try {
-    const body = await request.json();
-    const { username, password } = body;
-
-    if (!username || !password) {
-      return jsonResponse({ success: false, error: '请输入用户名和密码' }, 400);
-    }
-
-    const user = db.findUser(username);
-
-    if (!user || user.password !== password) {
-      return jsonResponse({ success: false, error: '用户名或密码错误' }, 401);
-    }
-
-    // 生成简单会话 token
-    const token = generateToken(user.id, user.role);
-
-    return jsonResponse({
-      success: true,
-      user: {
-        id: user.id,
-        username: user.username,
-        realName: user.realName,
-        role: user.role
-      },
-      token: token
-    });
+    const { email, password } = await request.json();
+    if (!email || !password) return json({ success: false, error: '请输入邮箱和密码' }, 400);
+    const client = createAnonClient();
+    const { data, error } = await client.auth.signInWithPassword({ email, password });
+    if (error || !data.user || !data.session) return json({ success: false, error: error?.message || '邮箱或密码错误' }, 401);
+    const { data: profile, error: profileError } = await client.from('profiles').select('id, username, role').eq('id', data.user.id).single();
+    if (profileError || !profile) return json({ success: false, error: '用户资料不存在' }, 403);
+    return json({ success: true, session: data.session, user: profile });
   } catch (error) {
-    console.error('Login error:', error);
-    return jsonResponse({ success: false, error: '登录失败' }, 500);
+    console.error('Supabase login error:', error.message);
+    return json({ success: false, error: '登录服务暂时不可用' }, 500);
   }
 };
-
-// 辅助函数
-function jsonResponse(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      ...getCorsHeaders()
-    }
-  });
-}
-
-function getCorsHeaders() {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-  };
-}
-
-function generateToken(userId, role) {
-  // 简化版 token，实际生产应使用 JWT
-  const payload = { userId, role, exp: Date.now() + 86400000 };
-  return Buffer.from(JSON.stringify(payload)).toString('base64');
-}
+function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', ...cors() } }); }
+function cors() { return { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' }; }

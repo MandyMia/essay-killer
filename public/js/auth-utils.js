@@ -8,7 +8,7 @@ class AuthUtils {
 
   // 检查是否已登录
   checkAuth() {
-    return localStorage.getItem('isAuthenticated') === 'true'
+    return Boolean(localStorage.getItem('supabaseAccessToken') || localStorage.getItem('isAuthenticated') === 'true')
       && localStorage.getItem('userInfo') !== null;
   }
 
@@ -35,12 +35,60 @@ class AuthUtils {
 
   // 清除登录状态
   clearAuth() {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userInfo');
+    ['isAuthenticated', 'userRole', 'userInfo', 'supabaseAccessToken', 'supabaseRefreshToken', 'token', 'devBypass'].forEach(key => localStorage.removeItem(key));
     this.isAuthenticated = false;
     this.userRole = null;
     this.userInfo = null;
+  }
+
+  getAccessToken() {
+    return localStorage.getItem('supabaseAccessToken');
+  }
+
+  authHeaders(headers = {}) {
+    const token = this.getAccessToken();
+    return token ? { ...headers, Authorization: `Bearer ${token}` } : headers;
+  }
+
+  async apiFetch(url, options = {}) {
+    const requestOptions = { ...options, headers: this.authHeaders({ ...(options.headers || {}) }) };
+    let response = await fetch(url, requestOptions);
+    if (response.status !== 401) return response;
+
+    const refreshToken = localStorage.getItem('supabaseRefreshToken');
+    if (!refreshToken) { this.clearAuth(); window.location.href = 'parent-login.html'; return response; }
+    try {
+      const refreshResponse = await fetch('/api/auth/refresh', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken })
+      });
+      if (!refreshResponse.ok) throw new Error('refresh failed');
+      const data = await refreshResponse.json();
+      localStorage.setItem('supabaseAccessToken', data.access_token);
+      if (data.refresh_token) localStorage.setItem('supabaseRefreshToken', data.refresh_token);
+      response = await fetch(url, { ...requestOptions, headers: this.authHeaders({ ...(options.headers || {}) }) });
+      if (response.status === 401) throw new Error('session expired');
+      return response;
+    } catch {
+      this.clearAuth();
+      window.location.href = this.userRole === 'teacher' ? 'teacher-login.html' : 'parent-login.html';
+      return response;
+    }
+  }
+
+  async verifySession() {
+    const token = this.getAccessToken();
+    if (!token) return false;
+    try {
+      const response = await this.apiFetch('/api/auth/me');
+      if (!response.ok) { this.clearAuth(); return false; }
+      const data = await response.json();
+      if (data.user) {
+        localStorage.setItem('userInfo', JSON.stringify(data.user));
+        localStorage.setItem('userRole', data.user.role);
+      }
+      return true;
+    } catch { return false; }
   }
 
   // 检查角色权限

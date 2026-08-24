@@ -217,14 +217,26 @@
       border-radius: 8px;
       margin-top: 15px;
     }
-    .loading-spinner {
-      display: none;
-      text-align: center;
-      padding: 20px;
-    }
-    .loading-spinner.show {
-      display: block;
-    }
+    .assignment-detail-card { display: none; margin-bottom: 20px; padding: 22px; color: #334155; background: #f3f6ff; border: 1px solid #dbe4ff; border-radius: 14px; box-shadow: 0 4px 14px rgba(50, 70, 130, .08); }
+    .assignment-detail-card h1 { margin: 0 0 12px; color: #253b80; font-size: 1.65rem; }
+    .assignment-detail-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .assignment-detail-meta span { padding: 5px 10px; color: #52617a; background: #fff; border-radius: 999px; font-size: 13px; }
+    .assignment-detail-section { padding: 13px 0; border-top: 1px solid #dbe4ff; }
+    .assignment-detail-section strong { display: block; margin-bottom: 7px; }
+    .assignment-detail-section p { margin: 0; white-space: pre-wrap; line-height: 1.7; }
+    .assignment-detail-options { display: flex; flex-wrap: wrap; gap: 14px; color: #52617a; font-size: 14px; }
+
+    .assignment-info h3 { margin: 0 0 12px; color: #253b80; font-size: 1.35rem; }
+    .assignment-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .assignment-meta span { padding: 4px 9px; color: #52617a; background: #fff; border-radius: 999px; font-size: 12px; }
+    .assignment-section { padding: 12px 0; border-top: 1px solid #dbe4ff; }
+    .assignment-section strong { display: block; margin-bottom: 6px; color: #334155; }
+    .assignment-section p { margin: 0; white-space: pre-wrap; line-height: 1.65; }
+    .assignment-options { display: flex; flex-wrap: wrap; gap: 10px; }
+    .assignment-option { color: #52617a; font-size: 13px; }
+
+    .loading-spinner { display: none; text-align: center; padding: 20px; }
+    .loading-spinner.show { display: block; }
   </style>
 </head>
 <body>
@@ -248,6 +260,7 @@
   </nav>
 
   <div class="container main-container">
+    <section id="assignmentDetailCard" class="assignment-detail-card" aria-live="polite"></section>
     <!-- 学生信息 -->
     <div class="student-info">
       <div class="row align-items-center">
@@ -278,9 +291,10 @@
             <input type="text" class="form-control" id="essayTitle" placeholder="请输入作文题目">
           </div>
 
+          <div id="assignmentInfo" class="assignment-info mb-3" style="display:none;"></div>
+
           <div class="mb-3">
-            <label class="form-label">作文内容</label>
-            <textarea class="form-control essay-textarea" id="essayContent"
+            <label class="form-label">作文内容</label>            <textarea class="form-control essay-textarea" id="essayContent"
                        placeholder="请输入作文内容。您也可以上传手写作文图片，系统会自动识别文字内容。"></textarea>
             <small class="text-muted">支持最多2000字</small>
           </div>
@@ -403,9 +417,12 @@
           </h4>
 
           <div class="d-grid gap-2">
-            <button class="btn btn-primary" onclick="submitEssay()" id="submitBtn">
-              <i class="bi bi-check-circle me-2"></i>提交作文
-            </button>
+              <button class="btn btn-primary" onclick="submitEssay()" id="submitBtn">
+                <i class="bi bi-check-circle me-2"></i>提交作文
+              </button>
+              <button class="btn btn-success" id="submitAssignmentBtn" onclick="submitAssignment()" style="display:none;">
+                <i class="bi bi-send-check me-2"></i>提交作业
+              </button>
             <button class="btn btn-outline-secondary" onclick="saveDraft()">
               <i class="bi bi-save me-2"></i>保存草稿
             </button>
@@ -444,12 +461,24 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/auth-utils.js"></script>
   <script>
+    function escapeJs(text) {
+      if (!text) return '';
+      return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/'/g, "\\'");
+    }
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
     // 全局变量
     let selectedImages = [];
     const MAX_IMAGES = 9;
     const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
     let ocrResultText = '';
+    const assignmentId = new URLSearchParams(window.location.search).get('assignment_id');
 
     // DOM 元素
     const fileInput = document.getElementById('file-input');
@@ -464,7 +493,7 @@
     const loading = document.getElementById('loading');
 
     // 初始化
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
       // 设置拖拽事件
       setupDragAndDrop();
 
@@ -478,14 +507,56 @@
       updateTime();
       setInterval(updateTime, 1000);
 
-      // 检查登录状态
-      if (!authUtils.checkAuth() || !authUtils.checkRole('parent')) {
+      // 检查登录状态，并优先通过 /api/auth/me 触发 token 刷新。
+      const accessToken = localStorage.getItem('supabaseAccessToken');
+      if (!accessToken) {
         window.location.href = 'parent-login.html';
         return;
       }
+      const sessionValid = await authUtils.verifySession();
+      if (!sessionValid || !['parent', 'student'].includes(authUtils.getUserRole())) {
+        return;
+      }
+      if (assignmentId) loadAssignmentDetails();
     });
 
-    // 设置拖拽功能
+    async function loadAssignmentDetails() {
+      try {
+        console.log('[作业详情] assignment_id:', assignmentId);
+        const requestUrl = `/api/assignments/${encodeURIComponent(assignmentId)}`;
+        console.log('[作业详情] 请求 URL:', requestUrl);
+        const response = await authUtils.apiFetch(requestUrl);
+        const result = await response.json();
+        console.log('[作业详情] 响应:', response.status, result);
+        if (!response.ok || !result.success) throw new Error(result.error || '加载作业失败');
+        const assignment = result.assignment || result.assignments?.find(item => String(item.id) === String(assignmentId)) || result.data?.find?.(item => String(item.id) === String(assignmentId)) || result.data;
+        if (assignment) {
+          document.getElementById('essayTitle').value = assignment.title || '';
+          document.getElementById('essayTitle').readOnly = true;
+          document.getElementById('submitAssignmentBtn').style.display = 'inline-block';
+          const detailCard = document.getElementById('assignmentDetailCard');
+          detailCard.style.display = 'block';
+          detailCard.innerHTML = '';
+          const heading = document.createElement('h1'); heading.textContent = assignment.title || '未命名作业'; detailCard.appendChild(heading);
+          const meta = document.createElement('div'); meta.className = 'assignment-detail-meta';
+          const type = assignment.essay_type || assignment.type || assignment.assignment_type;
+          const min = assignment.min_words ?? assignment.minWords; const max = assignment.max_words ?? assignment.maxWords;
+          if (type) meta.insertAdjacentHTML('beforeend', `<span>类型：${escapeHtml(type)}</span>`);
+          if (min != null || max != null) meta.insertAdjacentHTML('beforeend', `<span>字数：${escapeHtml(min ?? 0)}-${escapeHtml(max ?? '不限')}字</span>`);
+          if (assignment.deadline) meta.insertAdjacentHTML('beforeend', `<span>截止时间：${escapeHtml(assignment.deadline)}</span>`);
+          detailCard.appendChild(meta);
+          const requirements = assignment.requirements || assignment.content || assignment.description;
+          if (requirements) { const section = document.createElement('div'); section.className = 'assignment-detail-section'; section.innerHTML = '<strong>写作要点 / 详细要求</strong><p></p>'; section.querySelector('p').textContent = requirements; detailCard.appendChild(section); }
+          const reference = assignment.reference_essay || assignment.reference_text || assignment.referenceText;
+          if (reference) { const details = document.createElement('details'); details.className = 'assignment-detail-section'; details.innerHTML = '<summary>查看参考范文</summary><p></p>'; details.querySelector('p').textContent = reference; detailCard.appendChild(details); }
+          const options = [['need_handwriting', 'bi-pencil', '需要手写'], ['need_recitation', 'bi-book', '需要背诵'], ['submit_as_model', 'bi-bookmark-star', '提交范文']].filter(([key]) => assignment[key]);
+          if (options.length) { const section = document.createElement('div'); section.className = 'assignment-detail-section'; section.innerHTML = '<strong>作业选项</strong><div class="assignment-detail-options"></div>'; options.forEach(([, icon, label]) => section.querySelector('div').insertAdjacentHTML('beforeend', `<span><i class="bi ${icon} me-1"></i>${label}</span>`)); detailCard.appendChild(section); }
+          document.getElementById('gradeClass').closest('.mb-3').style.display = 'none';
+          document.getElementById('essayType').closest('.mb-3').style.display = 'none';
+        }
+      } catch (error) { console.error('加载作业详情失败:', error); showError('作业信息加载失败，请返回作业中心'); }
+    }
+
     function setupDragAndDrop() {
       uploadArea.addEventListener('dragover', function(e) {
         e.preventDefault();
@@ -633,8 +704,8 @@
           formData.append(`images[${index}]`, image.file);
         });
 
-        // 发送到后端API
-        const response = await fetch('http://localhost:3003/api/ocr/upload', {
+        // 发送到后端 API。密钥由后端环境变量管理，前端不接触密钥。
+        const response = await fetch('/api/ocr', {
           method: 'POST',
           body: formData
         });
@@ -649,7 +720,8 @@
           document.getElementById('ocrSection').style.display = 'block';
 
           if (ocrResultText.trim()) {
-            showSuccess('文字识别成功！');
+            showSuccess('文字识别成功！正在整理作文格式...');
+            formatOcrEssay();
           } else {
             showWarning('未能识别到文字，请确保图片清晰');
           }
@@ -664,7 +736,7 @@
       }
     }
 
-    // 使用OCR识别结果
+    // 使用 OCR 结果
     function useOCRResult() {
       if (ocrResultText) {
         document.getElementById('essayContent').value = ocrResultText;
@@ -672,8 +744,31 @@
       }
     }
 
+    async function formatOcrEssay() {
+      try {
+        const response = await fetch('/api/ai/format-essay', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: ocrResultText, title: document.getElementById('essayTitle').value })
+        });
+        const result = await response.json();
+        if (response.ok && result.success && result.content) {
+          ocrResultText = result.content;
+          document.getElementById('ocrResult').innerHTML = `<p class="mb-0"></p>`;
+          document.getElementById('ocrResult').querySelector('p').textContent = ocrResultText;
+          document.getElementById('essayContent').value = ocrResultText;
+          updateWordCount();
+          showSuccess('OCR文字已自动整理并填入作文内容');
+        } else {
+          showWarning(result.error || 'AI整理失败，已保留OCR原文');
+        }
+      } catch (error) {
+        console.warn('作文格式整理失败:', error);
+        showWarning('AI整理服务暂不可用，已保留OCR原文');
+      }
+    }
+
     // 提交作文
-    function submitEssay() {
+    async function submitEssay() {
       const title = document.getElementById('essayTitle').value.trim();
       const content = document.getElementById('essayContent').value.trim();
       const gradeClass = document.getElementById('gradeClass').value;
@@ -708,19 +803,30 @@
         total_images: selectedImages.length
       };
 
-      // 模拟提交
-      console.log('提交作文数据:', essayData);
+      // 提交到 Supabase submissions API
+      const assignmentId = new URLSearchParams(window.location.search).get('assignment_id') || sessionStorage.getItem('currentAssignmentId');
+      if (!assignmentId) {
+        showSuccess('作文提交成功！系统将自动进行批改。');
+        setTimeout(() => { window.location.href = 'feature-center.html'; }, 1200);
+        return;
+      }
+      try {
+        const response = await fetch('/api/submissions', {
+          method: 'POST',
+          headers: authUtils.authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ assignment_id: assignmentId, essay_text: content, ocr_text: ocrResultText || '', status: 'submitted' })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.error || '提交失败');
+        showSuccess('作文提交成功！');
+        setTimeout(() => { window.location.href = 'feature-center.html'; }, 1200);
+      } catch (error) {
+        console.error('提交作文失败:', error);
+        showError(error.message || '提交失败，请稍后重试');
+      }
+      return;
 
-      // 实际项目中发送到后端
-      /*
-      fetch('http://localhost:3003/api/essays/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(essayData)
-      })
-      */
+      // 旧的本地模拟提交代码（仅保留字段构造用于兼容草稿）
 
       // 显示成功提示
       showSuccess('作文提交成功！系统将自动进行批改。');
@@ -733,7 +839,18 @@
       }, 1500);
     }
 
-    // 保存草稿
+    async function submitAssignment() {
+      const score = window.currentGrading?.score ?? window.currentGrading?.totalScore;
+      const feedback = window.currentGrading?.feedback || window.currentGrading?.overallComments || '';
+      if (score == null) { alert('请先完成AI批改'); return; }
+      const content = document.getElementById('essayContent').value.trim();
+      if (!content) { showError('请先填写作文内容'); return; }
+      const response = await authUtils.apiFetch('/api/submissions', { method: 'POST', headers: authUtils.authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ assignment_id: assignmentId, essay_text: content, ocr_text: ocrResultText || '', score, feedback, status: 'submitted' }) });
+      const result = await response.json();
+      if (!response.ok || !result.success) { showError(result.error || '提交作业失败'); return; }
+      alert('作业提交成功'); window.location.href = 'feature-center.html';
+    }
+
     function saveDraft() {
       const draftData = {
         title: document.getElementById('essayTitle').value,
@@ -823,7 +940,7 @@
     // 返回上一页
     function goBack() {
       if (confirm('确定要返回吗？未保存的内容将丢失。')) {
-        window.location.href = 'parent-home.html';
+        window.location.href = 'feature-center.html';
       }
     }
 

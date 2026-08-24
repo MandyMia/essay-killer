@@ -6,11 +6,16 @@
   "type": "module",
   "scripts": {
     "dev": "edgeone pages dev",
+    "dev:api": "node local-server.cjs",
+    "dev:static": "node local-static.cjs",
     "deploy": "edgeone pages deploy",
     "build": "echo 'Static build complete'",
     "preview": "edgeone pages project preview"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
+    "express": "^5.2.1"
+  },
   "devDependencies": {
     "edgeone": "^1.4.5"
   },

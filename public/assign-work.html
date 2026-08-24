@@ -53,34 +53,8 @@
       font-weight: 600;
       font-size: 16px;
     }
-    .class-selector {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-    .class-card {
-      background: #f8f9fa;
-      border: 2px solid #e0e0e0;
-      border-radius: 15px;
-      padding: 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    .class-card:hover {
-      border-color: #667eea;
-      transform: translateY(-5px);
-    }
-    .class-card.selected {
-      background: #e7f3ff;
-      border-color: #667eea;
-    }
-    .class-card i {
-      font-size: 2.5rem;
-      color: #667eea;
-      margin-bottom: 10px;
-    }
+    /* 班级选择已由 URL class_id 取代 */
+    .class-selector, .class-card { display: none; }
     .requirements-section {
       background: #f8f9fa;
       border-radius: 15px;
@@ -277,6 +251,8 @@
       <h2 class="mb-4">
         <i class="bi bi-plus-circle me-2 text-primary"></i>布置新作业
       </h2>
+      <div id="classPrompt" class="alert alert-warning" style="display:none;"><i class="bi bi-arrow-left me-2"></i>请从班级列表进入布置作业 <a href="teacher-dashboard.html#classes">返回班级列表</a></div>
+      <div id="targetClass" class="alert alert-primary">布置作业至：加载中...</div>
 
       <!-- 基本信息 -->
       <div class="mb-4">
@@ -301,29 +277,6 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- 选择班级 -->
-      <div class="mb-4">
-        <h4 class="mb-3">选择班级 *</h4>
-        <div class="class-selector">
-          <div class="class-card" onclick="selectClass(this, '3-1')">
-            <i class="bi bi-people-fill"></i>
-            <h5>三年级1班</h5>
-            <p class="text-muted mb-0">45名学生</p>
-          </div>
-          <div class="class-card" onclick="selectClass(this, '3-2')">
-            <i class="bi bi-people-fill"></i>
-            <h5>三年级2班</h5>
-            <p class="text-muted mb-0">38名学生</p>
-          </div>
-          <div class="class-card" onclick="selectClass(this, '3-3')">
-            <i class="bi bi-people-fill"></i>
-            <h5>三年级3班</h5>
-            <p class="text-muted mb-0">37名学生</p>
-          </div>
-        </div>
-        <input type="hidden" id="selectedClasses" value="">
       </div>
 
       <!-- 作文要求 -->
@@ -490,22 +443,7 @@
       window.location.href = 'teacher-dashboard.html#classes';
     }
 
-    // 选择班级
-    function selectClass(element, classId) {
-      element.classList.toggle('selected');
-
-      // 更新隐藏的输入字段
-      const selectedInput = document.getElementById('selectedClasses');
-      const selectedClasses = Array.from(document.querySelectorAll('.class-card.selected'))
-        .map(card => card.querySelector('h5').textContent);
-
-      selectedInput.value = selectedClasses.join(',');
-
-      // 更新预览
-      updatePreview();
-    }
-
-    // 选择模板
+      // 选择模板
     function selectTemplate(element, templateId) {
       document.querySelectorAll('.template-card').forEach(card => {
         card.classList.remove('selected');
@@ -543,21 +481,16 @@
     // 更新预览
     function updatePreview() {
       const title = document.getElementById('assignmentTitle').value;
-      const selectedClasses = document.getElementById('selectedClasses').value;
       const writingPoints = document.getElementById('writingPoints').value;
       const deadlineDate = document.getElementById('deadlineDate').value;
       const deadlineTime = document.getElementById('deadlineTime').value;
 
-      if (title && selectedClasses && writingPoints && deadlineDate) {
+      if (title && writingPoints && deadlineDate) {
         document.getElementById('previewSection').classList.add('show');
         document.getElementById('previewTitle').textContent = title;
         document.getElementById('previewRequirements').textContent = writingPoints;
         document.getElementById('previewDeadline').textContent = `${deadlineDate} ${deadlineTime}`;
-
-        const submissionText = selectedClasses.includes('全部') ?
-          '所有学生需要提交作文' :
-          `以下班级需要提交：${selectedClasses}`;
-        document.getElementById('previewSubmission').textContent = submissionText;
+        document.getElementById('previewSubmission').textContent = '当前班级的学生需要提交作文';
       } else {
         document.getElementById('previewSection').classList.remove('show');
       }
@@ -634,17 +567,6 @@
       document.getElementById('req3').checked = !!draft.req3;
       document.getElementById('req4').checked = !!draft.req4;
 
-      // 恢复班级选择
-      document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
-      if (draft.classes) {
-        document.getElementById('selectedClasses').value = draft.classes;
-        document.querySelectorAll('.class-card').forEach(card => {
-          if (card.querySelector('h5')?.textContent === draft.classes) {
-            card.classList.add('selected');
-          }
-        });
-      }
-
       // 恢复截止时间
       if (draft.deadline) {
         const [date, time] = draft.deadline.split(' ');
@@ -687,7 +609,7 @@
         id: window.currentDraftId || Date.now(),
         title: document.getElementById('assignmentTitle').value,
         type: document.getElementById('assignmentType').value,
-        classes: document.getElementById('selectedClasses').value,
+        points: document.getElementById('writingPoints').value,
         points: document.getElementById('writingPoints').value,
         minWords: document.getElementById('minWords').value,
         maxWords: document.getElementById('maxWords').value,
@@ -719,13 +641,19 @@
 
     // 发布作业
     async function publishAssignment() {
-      const title = document.getElementById('assignmentTitle').value;
-      const selectedClasses = document.getElementById('selectedClasses').value;
-      const writingPoints = document.getElementById('writingPoints').value;
+      const title = document.getElementById('assignmentTitle').value.trim();
+      const writingPoints = document.getElementById('writingPoints').value.trim();
       const deadlineDate = document.getElementById('deadlineDate').value;
       const deadlineTime = document.getElementById('deadlineTime').value;
+      const params = new URLSearchParams(window.location.search);
+      const classId = params.get('class_id') || params.get('classId');
 
-      if (!title || !selectedClasses || !writingPoints || !deadlineDate) {
+      if (!classId) {
+        document.getElementById('classPrompt').style.display = 'block';
+        document.getElementById('targetClass').style.display = 'none';
+        return;
+      }
+      if (!title || !writingPoints || !deadlineDate) {
         alert('请填写完整信息！');
         return;
       }
@@ -744,21 +672,13 @@
           ? `${minWords || 0}-${maxWords || '∞'}字`
           : '';
         const description = writingPoints + (wordCountReq ? '\n字数要求：' + wordCountReq : '');
-        const grade = selectedClasses.replace(/班.*$/, '').trim() || '三年级';
-        const class_name = selectedClasses || '1班';
 
-        const isEditing = !!window.currentAssignmentId;
-        const url = isEditing
-          ? `http://localhost:3003/api/classes/${window.currentClassId || ''}/assignments/${window.currentAssignmentId}`
-          : 'http://localhost:3003/api/classes/assignments';
-        const method = isEditing ? 'PUT' : 'POST';
-        const body = isEditing
-          ? JSON.stringify({ title, description, deadline: deadlineDate, min_words: minWords ? parseInt(minWords) : null, max_words: maxWords ? parseInt(maxWords) : null })
-          : JSON.stringify({ title, description, grade, class_name, deadline: deadlineDate, min_words: minWords ? parseInt(minWords) : null, max_words: maxWords ? parseInt(maxWords) : null });
+        const url = '/api/assignments';
+        const body = JSON.stringify({ class_id: classId, title, content: description, deadline: `${deadlineDate}T${deadlineTime || '18:00'}:00` });
 
-        const res = await fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
+        const res = await authUtils.apiFetch(url, {
+          method: 'POST',
+          headers: authUtils.authHeaders({ 'Content-Type': 'application/json' }),
           credentials: 'include',
           body
         });
@@ -798,18 +718,15 @@
       const user = authUtils.getUserInfo();
       document.getElementById('teacherName').textContent = user.real_name || user.username;
 
-      // 从URL读取classId并自动选中对应班级
-      const urlParams = new URLSearchParams(window.location.search);
-      const classIdParam = urlParams.get('classId');
-      if (classIdParam) {
-        const classCards = document.querySelectorAll('.class-card');
-        classCards.forEach(card => {
-          if (card.getAttribute('onclick')?.includes(`'${classIdParam}'`)) {
-            card.classList.add('selected');
-            const selectedInput = document.getElementById('selectedClasses');
-            selectedInput.value = card.querySelector('h5').textContent;
-            updatePreview();
-          }
+      const classIdParam = urlParams.get('class_id') || urlParams.get('classId');
+      if (!classIdParam) {
+        document.getElementById('classPrompt').style.display = 'block';
+        document.getElementById('targetClass').style.display = 'none';
+      } else {
+        authUtils.apiFetch(`/api/classes/${encodeURIComponent(classIdParam)}`).then(async response => {
+          const result = await response.json();
+          if (response.ok && result.success) document.getElementById('targetClass').textContent = `布置作业至：${result.data.name}`;
+          else document.getElementById('targetClass').textContent = '无法加载目标班级';
         });
       }
 
@@ -834,14 +751,6 @@
           document.getElementById('req2').checked = !!draft.req2;
           document.getElementById('req3').checked = !!draft.req3;
           document.getElementById('req4').checked = !!draft.req4;
-          if (draft.classes) {
-            document.getElementById('selectedClasses').value = draft.classes;
-            document.querySelectorAll('.class-card').forEach(card => {
-              if (card.querySelector('h5')?.textContent === draft.classes) {
-                card.classList.add('selected');
-              }
-            });
-          }
           if (draft.deadline) {
             const [date, time] = draft.deadline.split(' ');
             document.getElementById('deadlineDate').value = date;
@@ -875,15 +784,6 @@
           if (a.deadline) {
             document.getElementById('deadlineDate').value = formatDate(a.deadline);
             document.getElementById('deadlineTime').value = '18:00';
-          }
-          // 选中班级
-          if (a.class_name) {
-            document.getElementById('selectedClasses').value = a.class_name;
-            document.querySelectorAll('.class-card').forEach(card => {
-              if (card.querySelector('h5')?.textContent === a.class_name) {
-                card.classList.add('selected');
-              }
-            });
           }
           updatePreview();
         }

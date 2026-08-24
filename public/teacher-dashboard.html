@@ -72,6 +72,11 @@
     .class-item:last-child {
       border-bottom: none;
     }
+    .class-item-actions { flex-wrap: wrap; }
+    .class-code-badge { color: #4b5fc7; background: #eef1ff; border-radius: 6px; padding: 3px 8px; font-size: 12px; }
+    .edit-class-backdrop { display: none; position: fixed; inset: 0; z-index: 1050; background: rgba(15, 23, 42, .5); align-items: center; justify-content: center; padding: 16px; }
+    .edit-class-backdrop.show { display: flex; }
+    .edit-class-dialog { width: min(420px, 100%); background: #fff; border-radius: 14px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
     .grade-class-section {
       margin-top: 20px;
     }
@@ -210,28 +215,28 @@
         <div class="col-md-3 col-6 mb-3">
           <div class="stat-card primary">
             <i class="bi bi-people"></i>
-            <h3 class="mb-0">120</h3>
+            <h3 class="mb-0" id="statStudents">0</h3>
             <p class="text-muted mb-0">学生总数</p>
           </div>
         </div>
         <div class="col-md-3 col-6 mb-3">
           <div class="stat-card success">
             <i class="bi bi-check-circle"></i>
-            <h3 class="mb-0">856</h3>
+            <h3 class="mb-0" id="statEssays">0</h3>
             <p class="text-muted mb-0">已批改作文</p>
           </div>
         </div>
         <div class="col-md-3 col-6 mb-3">
           <div class="stat-card warning">
             <i class="bi bi-clock"></i>
-            <h3 class="mb-0">42</h3>
+            <h3 class="mb-0" id="statPending">0</h3>
             <p class="text-muted mb-0">待批改</p>
           </div>
         </div>
         <div class="col-md-3 col-6 mb-3">
           <div class="stat-card info">
             <i class="bi bi-star"></i>
-            <h3 class="mb-0">94%</h3>
+            <h3 class="mb-0" id="statAverage">—</h3>
             <p class="text-muted mb-0">平均得分</p>
           </div>
         </div>
@@ -408,7 +413,23 @@
     </div>
   </div>
 
-  <!-- 创建班级模态框 -->
+  <div class="edit-class-backdrop" id="editClassBackdrop" role="dialog" aria-modal="true" aria-labelledby="editClassTitle">
+    <div class="edit-class-dialog">
+      <h5 id="editClassTitle" class="mb-3">编辑班级</h5>
+      <label class="form-label" for="editClassName">班级名称</label>
+      <input id="editClassName" class="form-control mb-3" type="text">
+      <label class="form-label" for="editClassGrade">年级</label>
+      <input id="editClassGrade" class="form-control mb-3" type="text" placeholder="例如：三年级">
+      <label class="form-label" for="editStudentCount">学生数量</label>
+      <input id="editStudentCount" class="form-control mb-4" type="number" min="0">
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-light" onclick="closeEditClassModal()">取消</button>
+        <button type="button" class="btn btn-primary" onclick="saveClassEdit()">保存</button>
+      </div>
+    </div>
+  </div>
+
+
   <div class="modal fade" id="createClassModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -435,8 +456,8 @@
               <input type="text" class="form-control" id="className" placeholder="例如：1班" required>
             </div>
             <div class="mb-3">
-              <label class="form-label">预计学生数</label>
-              <input type="number" class="form-control" id="expectedStudents" placeholder="例如：45" required>
+              <label class="form-label">学生数量</label>
+              <input type="number" class="form-control" id="expectedStudents" placeholder="例如：45" min="0" required>
             </div>
           </form>
         </div>
@@ -487,8 +508,9 @@
     // 登出
     function logout() {
       if (!confirm('确定要退出登录吗？')) return;
-      fetch('http://localhost:3003/api/auth/logout', {
+      fetch('/api/auth/logout', {
         method: 'POST',
+        headers: authUtils.authHeaders(),
         credentials: 'include'
       }).then(() => {
         localStorage.removeItem('isAuthenticated');
@@ -517,23 +539,30 @@
       }
 
       const user = authUtils.getUserInfo();
-      document.getElementById('teacherName').textContent = user.real_name || user.username;
-
-      // 初始加载
+      document.getElementById('teacherName').textContent = user?.real_name || user?.username || '教师';
+      authUtils.apiFetch('/api/dashboard/stats').then(async response => {
+        if (!response.ok) return;
+        const result = await response.json();
+        if (!result.success) return;
+        const data = result.data;
+        document.getElementById('statStudents').textContent = data.studentCount;
+        document.getElementById('statEssays').textContent = data.gradedCount;
+        document.getElementById('statPending').textContent = data.pendingCount;
+        document.getElementById('statAverage').textContent = data.averageScore == null ? '—' : `${data.averageScore}%`;
+      });
+      loadClasses();
+      loadPendingEssays();
     });
 
-    // 测试账号快速登录
     async function quickLogin(username, password, role) {
       try {
-        const loginApi = role === 'teacher'
-          ? 'http://localhost:3003/api/auth/teacher/login'
-          : 'http://localhost:3003/api/auth/parent/login';
+        const loginApi = '/api/auth/login';
 
         const res = await fetch(loginApi, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authUtils.authHeaders({ 'Content-Type': 'application/json' }),
           credentials: 'include',
-          body: JSON.stringify({ username, password })
+          body: JSON.stringify({ email: username, password })
         });
 
         const data = await res.json();
@@ -579,19 +608,19 @@
     async function createClass() {
       const grade = document.getElementById('classGrade').value;
       const className = document.getElementById('className').value;
-      const expectedStudents = document.getElementById('expectedStudents').value;
+      const expectedStudents = Number(document.getElementById('expectedStudents').value);
 
-      if (!grade || !className || !expectedStudents) {
+      if (!grade || !className || !Number.isInteger(expectedStudents) || expectedStudents < 0) {
         alert('请填写完整信息');
         return;
       }
 
       try {
-        const response = await fetch(`${API_BASE}/classes`, {
+        const response = await authUtils.apiFetch(`${API_BASE}/classes`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authUtils.authHeaders({ 'Content-Type': 'application/json' }),
           credentials: 'include',
-          body: JSON.stringify({ grade, class_name: className })
+          body: JSON.stringify({ grade, name: className, class_name: className, student_count: expectedStudents })
         });
 
         const result = await response.json();
@@ -611,53 +640,44 @@
     }
 
     // API基础URL
-    const API_BASE = 'http://localhost:3003/api';
+    const API_BASE = '/api';
 
     // 加载班级列表
     async function loadClasses() {
       try {
-        const response = await fetch(`${API_BASE}/classes`, { credentials: 'include' });
+        const response = await authUtils.apiFetch(`${API_BASE}/classes`, { headers: authUtils.authHeaders(), credentials: 'include' });
         const result = await response.json();
-
         const container = document.getElementById('classListContainer');
+        const classes = result.data || result.classes || [];
 
-        if (result.success && result.data && result.data.length > 0) {
-          container.innerHTML = result.data.map(c => `
+        if (result.success && classes.length) {
+          container.innerHTML = classes.map(c => `
             <div class="class-item">
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <h6 class="mb-1">${c.name || (c.grade + c.className)}</h6>
-                  <p class="text-muted mb-0 small">${c.studentCount || 0}名学生</p>
+              <div class="d-flex justify-content-between align-items-center gap-3">
+                <div class="min-w-0">
+                  <h6 class="mb-1">${escapeHtml(c.name || ((c.grade || '') + (c.className || '')))}</h6>
+                  <p class="text-muted mb-1 small">${c.student_count ?? c.studentCount ?? 0}名学生</p>
+                  ${c.class_code ? `<span class="class-code-badge">班级码：${escapeHtml(c.class_code)}</span>` : ''}
                 </div>
-                <div class="d-flex gap-2">
-                  <button class="btn btn-sm btn-outline-primary" onclick="viewClass(${c.id})">
-                    <i class="bi bi-eye"></i> 查看
-                  </button>
-                  <button class="btn btn-sm btn-outline-primary" onclick="assignWork(${c.id})">
-                    <i class="bi bi-plus-circle"></i> 布置作业
-                  </button>
+                <div class="class-item-actions d-flex gap-2 justify-content-end">
+                  <button class="btn btn-sm btn-outline-primary" onclick="viewClass('${c.id}')"><i class="bi bi-eye"></i> 查看</button>
+                  <button class="btn btn-sm btn-outline-success" onclick="assignWork('${c.id}')"><i class="bi bi-plus-circle"></i> 布置作业</button>
+                  <button class="btn btn-sm btn-outline-secondary" onclick="openEditClassModal('${c.id}', '${escapeJs(c.name || '')}', '${escapeJs(c.grade || '')}', '${c.student_count ?? c.studentCount ?? 0}')"><i class="bi bi-pencil"></i> 编辑</button>
+                  <button class="btn btn-sm btn-outline-danger" onclick="deleteClass('${c.id}', '${escapeJs(c.name || '该班级')}')"><i class="bi bi-trash"></i> 删除</button>
                 </div>
               </div>
-            </div>
-          `).join('');
+            </div>`).join('');
         } else {
           container.innerHTML = `
             <div class="text-center py-4">
               <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.3;"></i>
               <p class="mt-2 text-muted">暂无班级数据</p>
-              <button class="btn btn-primary btn-sm" onclick="showCreateClassModal()">
-                <i class="bi bi-plus-lg me-2"></i>创建第一个班级
-              </button>
-            </div>
-          `;
+              <button class="btn btn-primary btn-sm" onclick="showCreateClassModal()"><i class="bi bi-plus-lg me-2"></i>创建第一个班级</button>
+            </div>`;
         }
       } catch (error) {
         console.error('加载班级列表失败:', error);
-        document.getElementById('classListContainer').innerHTML = `
-          <div class="alert alert-warning">
-            <i class="bi bi-exclamation-triangle me-2"></i>加载班级列表失败，请检查服务器连接
-          </div>
-        `;
+        document.getElementById('classListContainer').innerHTML = '<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>加载班级列表失败，请检查服务器连接</div>';
       }
     }
 
@@ -669,29 +689,21 @@
       empty.style.display = 'none';
 
       try {
-        const res = await fetch(`${API_BASE}/teacher/essays/pending`, { credentials: 'include' });
+        const res = await authUtils.apiFetch(`${API_BASE}/submissions?status=submitted`, { headers: authUtils.authHeaders(), credentials: 'include' });
         const data = await res.json();
 
-        if (res.ok && data.essays && data.essays.length > 0) {
-          document.getElementById('todayPending').textContent = data.essays.length;
-          list.innerHTML = data.essays.map(essay => `
+        if (res.ok && data.submissions && data.submissions.length > 0) {
+          document.getElementById('todayPending').textContent = data.submissions.length;
+          list.innerHTML = data.submissions.map(submission => `
             <div class="essay-item">
               <div class="d-flex justify-content-between align-items-start">
                 <div>
-                  <h6 class="mb-1">${essay.author?.grade || ''}${essay.author?.class_name || ''} - ${essay.title || '无标题'}</h6>
-                  <p class="text-muted mb-1 small">
-                    学生：${essay.author?.real_name || essay.author?.username || '未知'} |
-                    提交时间：${formatTime(essay.created_at)}
-                  </p>
+                  <h6 class="mb-1">作文提交 #${submission.id}</h6>
+                  <p class="text-muted mb-1 small">学生：${submission.student_id} | 状态：${submission.status}</p>
                 </div>
-                <div class="d-flex gap-2">
-                  <button class="btn btn-sm btn-primary" onclick="gradeEssay(${essay.id})">
-                    <i class="bi bi-pencil"></i> 批改
-                  </button>
-                </div>
+                <button class="btn btn-sm btn-primary" onclick="gradeEssay('${submission.id}')"><i class="bi bi-pencil"></i> 批改</button>
               </div>
-            </div>
-          `).join('');
+            </div>`).join('');
         } else {
           list.innerHTML = '';
           empty.style.display = 'block';
@@ -715,14 +727,47 @@
       return `${d.getMonth()+1}月${d.getDate()}日`;
     }
 
-    // 查看班级
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
+    }
+    function escapeJs(value) { return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, ' '); }
+    let editingClassId = null;
+    function openEditClassModal(id, name, grade) {
+      editingClassId = id;
+      document.getElementById('editClassName').value = name || '';
+      document.getElementById('editStudentCount').value = Number(arguments[3] || 0);
+      document.getElementById('editClassBackdrop').classList.add('show');
+    }
+    function closeEditClassModal() { editingClassId = null; document.getElementById('editClassBackdrop').classList.remove('show'); }
+    async function saveClassEdit() {
+      if (!editingClassId) return;
+      const name = document.getElementById('editClassName').value.trim();
+      const grade = document.getElementById('editClassGrade').value.trim();
+      if (!name) return alert('请输入班级名称');
+      const response = await authUtils.apiFetch(`${API_BASE}/classes/${encodeURIComponent(editingClassId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, grade, student_count: Number(document.getElementById('editStudentCount')?.value || 0) }) });
+      const result = await response.json();
+      if (!response.ok || !result.success) return alert(result.error || '更新班级失败');
+      closeEditClassModal(); loadClasses();
+    }
+    async function deleteClass(id, name) {
+      if (!confirm(`确定删除班级 ${name} 吗？该班级下的作业和提交记录也会被删除`)) return;
+      const check = await authUtils.apiFetch(`${API_BASE}/classes/${encodeURIComponent(id)}`, { headers: authUtils.authHeaders() });
+      const checkData = await check.json();
+      if (checkData.requiresConfirmation) {
+        if (!confirm(`班级下有 ${checkData.submissionCount || 0} 份提交记录，确认删除？`)) return;
+      }
+      const response = await authUtils.apiFetch(`${API_BASE}/classes/${encodeURIComponent(id)}?confirm=true`, { method: 'DELETE', headers: authUtils.authHeaders() });
+      const result = await response.json();
+      if (!response.ok || !result.success) return alert(result.error || '删除班级失败');
+      loadClasses();
+    }
     function viewClass(classId) {
-      window.location.href = `class-detail.html?classId=${classId}`;
+      window.location.href = `class-detail.html?classId=${encodeURIComponent(classId)}`;
     }
 
     // 布置作业
     function assignWork(classId) {
-      window.location.href = `assign-work.html?classId=${classId}`;
+      window.location.href = `assign-work.html?class_id=${encodeURIComponent(classId)}`;
     }
 
     // 批改作文

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>本地开发免登录入口</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f6fb;
+      color: #172033;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 32px 18px; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    .header, .card {
+      background: #fff;
+      border: 1px solid #e4e9f2;
+      border-radius: 18px;
+      box-shadow: 0 12px 30px rgba(27, 45, 78, .08);
+    }
+    .header { padding: 28px; margin-bottom: 18px; }
+    h1 { margin: 0 0 10px; font-size: clamp(1.55rem, 4vw, 2.2rem); }
+    p { line-height: 1.65; }
+    .notice { color: #63708a; margin: 0; }
+    .warning {
+      display: none; margin-top: 18px; padding: 12px 14px; border-radius: 10px;
+      color: #8a4b00; background: #fff4df; border: 1px solid #ffd58a;
+    }
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .card { padding: 24px; }
+    .card h2 { margin: 0 0 8px; font-size: 1.2rem; }
+    .card p { color: #63708a; margin: 0 0 18px; }
+    .actions, .links { display: grid; gap: 10px; }
+    button, a {
+      display: inline-flex; align-items: center; justify-content: center; min-height: 44px;
+      padding: 10px 15px; border-radius: 10px; font: inherit; font-weight: 650;
+      text-decoration: none; cursor: pointer; transition: transform .15s, box-shadow .15s;
+    }
+    button:hover, a:hover { transform: translateY(-1px); }
+    button:focus-visible, a:focus-visible { outline: 3px solid #8cb7ff; outline-offset: 2px; }
+    .parent { color: #fff; background: linear-gradient(135deg, #1da56c, #1686a7); border: 0; }
+    .teacher { color: #fff; background: linear-gradient(135deg, #4b6bdf, #7450b5); border: 0; }
+    .secondary { color: #30405f; background: #f5f7fb; border: 1px solid #dbe2ee; }
+    .links a { justify-content: flex-start; color: #30405f; background: #f8faff; border: 1px solid #e0e8f5; }
+    .links a[aria-disabled="true"] { opacity: .45; pointer-events: none; }
+    .status { margin-top: 18px; padding: 14px; border-radius: 10px; background: #f5f8fc; color: #53617a; }
+    code { background: #edf2f8; padding: 2px 5px; border-radius: 5px; }
+    .footer { margin-top: 18px; text-align: center; color: #75819a; font-size: .9rem; }
+    @media (max-width: 680px) { .grid { grid-template-columns: 1fr; } body { padding: 18px 12px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="header">
+      <h1>本地开发免登录入口</h1>
+      <p class="notice">仅用于本机调试：选择一个测试身份后，系统会写入项目现有的认证字段，并进入对应的登录后页面。</p>
+      <div id="warning" class="warning" role="alert">安全限制：此入口只允许在 localhost 或 127.0.0.1 使用，不会在其他来源写入模拟登录状态。</div>
+      <div id="status" class="status" aria-live="polite">当前尚未设置测试身份。</div>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <h2>选择测试身份</h2>
+        <p>不会修改正式登录页或路由守卫；只写入本地浏览器的 localStorage。</p>
+        <div class="actions">
+          <button class="parent" type="button" data-role="parent">以测试家长身份进入</button>
+          <button class="teacher" type="button" data-role="teacher">以测试教师身份进入</button>
+          <button class="secondary" type="button" id="clearAuth">清除测试登录状态</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>功能页面快捷入口</h2>
+        <p>先选择身份，再打开相应页面。页面自身的角色守卫仍会正常执行。</p>
+        <div class="links">
+          <a href="feature-center.html" data-required-role="parent">家长功能中心（作文批改 / 高分作文 / 背诵）</a>
+          <a href="submit-essay-with-images.html" data-required-role="parent">家长：提交作文 / 图片识别</a>
+          <a href="teacher-dashboard.html" data-required-role="teacher">教师工作台（班级管理 / 作文批改）</a>
+          <a href="class-detail.html?classId=1" data-required-role="teacher">教师：班级详情</a>
+          <a href="assign-work.html?classId=1" data-required-role="teacher">教师：布置作业</a>
+          <a href="grade-essay.html?id=1" data-required-role="teacher">教师：作文批改</a>
+          <a href="student-detail.html?studentId=1" data-required-role="teacher">教师：学生详情</a>
+        </div>
+      </section>
+    </div>
+
+    <p class="footer">开发辅助页已被 .gitignore 忽略，不应提交或部署到正式环境。</p>
+  </main>
+
+  <script>
+    (function () {
+      const isLocal = ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+      const warning = document.getElementById('warning');
+      const status = document.getElementById('status');
+      const links = [...document.querySelectorAll('[data-required-role]')];
+
+      if (!isLocal) warning.style.display = 'block';
+
+      function currentRole() {
+        return localStorage.getItem('devBypass') === 'true' ? localStorage.getItem('userRole') : null;
+      }
+
+      function refresh() {
+        const role = currentRole();
+        status.textContent = role
+          ? `当前测试身份：${role === 'teacher' ? '测试教师' : '测试家长'}（${role}）`
+          : '当前尚未设置测试身份。';
+        links.forEach(link => {
+          const allowed = role === link.dataset.requiredRole;
+          link.setAttribute('aria-disabled', String(!allowed));
+          link.title = allowed ? '' : `请先选择${link.dataset.requiredRole === 'teacher' ? '测试教师' : '测试家长'}身份`;
+        });
+      }
+
+      function setDevIdentity(role, redirect) {
+        if (!isLocal) return;
+        // 开发入口不再伪造 token；请使用真实 Supabase 登录 session。
+        localStorage.removeItem('token');
+        localStorage.removeItem('devBypass');
+        localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('supabaseAccessToken');
+        localStorage.removeItem('supabaseRefreshToken');
+        alert('开发免登录已停用，请使用真实账号登录后再访问业务页面。');
+        refresh();
+      }
+
+      document.querySelectorAll('[data-role]').forEach(button => {
+        button.addEventListener('click', () => setDevIdentity(button.dataset.role, true));
+      });
+      document.getElementById('clearAuth').addEventListener('click', () => {
+        ['isAuthenticated', 'userRole', 'userInfo', 'token', 'devBypass', 'supabaseAccessToken', 'supabaseRefreshToken'].forEach(key => localStorage.removeItem(key));
+        refresh();
+      });
+      refresh();
+    }());
+  </script>
+</body>
+</html>
