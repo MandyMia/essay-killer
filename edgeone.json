@@ -1,1 +1,17 @@
-{"build":{"output":"public"}}
+{
+  "version": 2,
+  "routes": [
+    {
+      "route": "/api/*",
+      "type": "function"
+    },
+    {
+      "route": "/*",
+      "serve": "public"
+    }
+  ],
+  "buildCommand": "",
+  "outputDirectory": "public",
+  "deploymentType": "pages",
+  "compatibilityFlags": ["nodejs_compat"]
+}
