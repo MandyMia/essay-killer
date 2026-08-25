@@ -49,5 +49,68 @@ app.get('/api/submissions/:id',async(req,res)=>{try{const c=await auth(req);if(!
 app.patch('/api/submissions/:id',async(req,res)=>{try{const c=await auth(req,'teacher');if(!c)return json(res,{success:false,error:'无教师权限'},401);const u={teacher_score:Number(req.body.teacher_score),teacher_feedback:req.body.teacher_feedback||'',status:'graded'};const r=await c.db.from('submissions').update(u).eq('id',req.params.id).select().single();return r.error?json(res,{success:false,error:r.error.message},500):json(res,{success:true,submission:r.data,data:r.data});}catch(e){return json(res,{success:false,error:e.message},500);}});
 
 app.post('/api/ocr', upload.any(), async(req,res)=>{try{const file=req.files?.[0];if(!file)return json(res,{success:false,error:'未找到上传文件'},400);const token=await (await fetch(`https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${process.env.BAIDU_API_KEY}&client_secret=${process.env.BAIDU_SECRET_KEY}`,{method:'POST'})).json();const params=new URLSearchParams({image:file.buffer.toString('base64')});const d=await (await fetch(`https://aip.baidubce.com/rest/2.0/ocr/v1/general_basic?access_token=${token.access_token}`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:params})).json();const text=(d.words_result||[]).map(x=>x.words).join('\n');return json(res,{success:true,text,extractedText:text});}catch(e){console.error(e);return json(res,{success:false,error:e.message},500);}});
+
+const AI_MAX_TEXT = 12000;
+const AI_TIMEOUT_MS = 30000;
+const aiRateMap = new Map();
+function allowAi(req) {
+  const key = req.headers['x-forwarded-for'] || req.ip || 'guest';
+  const now = Date.now();
+  const item = aiRateMap.get(key) || { start: now, count: 0 };
+  if (now - item.start >= 60000) { item.start = now; item.count = 0; }
+  item.count += 1;
+  aiRateMap.set(key, item);
+  return item.count <= 10;
+}
+function parseAiContent(value) {
+  if (typeof value !== 'string') return '';
+  const cleaned = value.trim().replace(/^```(?:json)?\s*|\s*```$/gi, '').trim();
+  try {
+    const parsed = JSON.parse(cleaned);
+    return typeof parsed.content === 'string' ? parsed.content.trim() : '';
+  } catch { return cleaned; }
+}
+app.post('/api/ai/format-essay', async (req, res) => {
+  try {
+    if (!allowAi(req)) return json(res, { success: false, error: 'AI请求过于频繁，请稍后再试' }, 429);
+    const apiKey = process.env.DEEPSEEK_API_KEY;
+    if (!apiKey) return json(res, { success: false, error: 'AI整理服务未配置' }, 503);
+    const text = typeof req.body.text === 'string' ? req.body.text.trim() : '';
+    const title = typeof req.body.title === 'string' ? req.body.title.trim() : '';
+    const grade = typeof req.body.grade === 'string' ? req.body.grade.trim() : '';
+    if (!text) return json(res, { success: false, error: '缺少待整理的作文内容' }, 400);
+    if (text.length > AI_MAX_TEXT) return json(res, { success: false, error: `作文内容不能超过${AI_MAX_TEXT}字` }, 400);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
+    let response;
+    try {
+      response = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          temperature: 0.1,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: '你是小学语文作文整理助手。只整理OCR识别出的作文：恢复合理分段、标点和句子连接，保留原文事实、语气和内容，不添加原文没有的信息，不评分、不点评。输出必须是JSON对象，格式为 {"content":"整理后的作文"}。' },
+            { role: 'user', content: `题目：${title || '未提供'}\n年级：${grade || '未提供'}\nOCR原文：\n${text}` }
+          ]
+        })
+      });
+    } finally { clearTimeout(timer); }
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error('DeepSeek error:', response.status, data.error?.message || 'unknown');
+      return json(res, { success: false, error: 'AI整理服务暂时不可用，请稍后重试' }, 502);
+    }
+    const formatted = parseAiContent(data.choices?.[0]?.message?.content);
+    if (!formatted) return json(res, { success: false, error: 'AI未返回有效的整理结果' }, 502);
+    return json(res, { success: true, content: formatted });
+  } catch (e) {
+    console.error('format-essay error:', e.message);
+    return json(res, { success: false, error: e.name === 'AbortError' ? 'AI整理超时，请稍后重试' : 'AI整理失败，请保留原文' }, 502);
+  }
+});
 app.all('/api/*splat',(_req,res)=>json(res,{success:false,error:'API route not found'},404));
 export default app;

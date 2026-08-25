@@ -1,4 +1,5 @@
 const MAX_TEXT_LENGTH = 12000;
+const REQUEST_TIMEOUT_MS = 30000;
 const guestRequests = new Map();
 function allowAiRequest(request) {
   const key = request.headers.get('x-forwarded-for') || 'guest';
