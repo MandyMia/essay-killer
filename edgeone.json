@@ -1,6 +1,3 @@
 {
-  "version": 2,
-  "build": {
-    "output": "public"
-  }
+  "outputDirectory": "public"
 }
